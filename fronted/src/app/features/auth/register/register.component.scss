@@ -1,0 +1,55 @@
+.auth-card {
+  max-width: 560px;
+  margin: 2rem auto;
+  background: rgba(255, 255, 255, 0.86);
+  border: 1px solid rgba(23, 70, 62, 0.16);
+  border-radius: 1rem;
+  padding: 1.2rem;
+}
+
+h1 {
+  margin: 0;
+  font-family: var(--font-display);
+}
+
+p {
+  color: var(--text-soft);
+}
+
+form {
+  display: grid;
+  gap: 0.8rem;
+}
+
+label {
+  display: grid;
+  gap: 0.35rem;
+  font-weight: 600;
+}
+
+input,
+button {
+  min-height: 2.5rem;
+  border-radius: 0.7rem;
+  border: 1px solid rgba(24, 64, 56, 0.3);
+  padding: 0.45rem 0.7rem;
+  font: inherit;
+}
+
+button {
+  border: none;
+  background: #18624f;
+  color: #fff;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.error {
+  color: #b03c34;
+  font-weight: 600;
+}
+
+.hint a {
+  color: #195d9d;
+  text-decoration: none;
+}

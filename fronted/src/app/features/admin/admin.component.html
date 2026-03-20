@@ -1,0 +1,81 @@
+<section>
+  <h1>Panel administrativo</h1>
+  <p class="subtitle">Moderación, reportes y métricas operativas.</p>
+</section>
+
+<p class="error" *ngIf="error()">{{ error() }}</p>
+<p class="info" *ngIf="info()">{{ info() }}</p>
+
+<section class="cards-grid">
+  <article class="card" *ngIf="summary() as summary">
+    <h2>Analytics Summary</h2>
+    <p>Total eventos: <strong>{{ summary.totalEvents }}</strong></p>
+    <ul>
+      <li *ngFor="let item of summary.byType">{{ item.eventType }}: {{ item.total }}</li>
+    </ul>
+  </article>
+
+  <article class="card">
+    <h2>Moderación rápida</h2>
+    <form [formGroup]="moderationForm" (ngSubmit)="applyModeration()">
+      <input formControlName="placeId" placeholder="Place ID" />
+      <select formControlName="placeStatus">
+        <option value="DRAFT">DRAFT</option>
+        <option value="PUBLISHED">PUBLISHED</option>
+        <option value="SUSPENDED">SUSPENDED</option>
+      </select>
+
+      <input formControlName="eventId" placeholder="Event ID" />
+      <select formControlName="eventStatus">
+        <option value="ACTIVE">ACTIVE</option>
+        <option value="CANCELLED">CANCELLED</option>
+        <option value="SUSPENDED">SUSPENDED</option>
+      </select>
+
+      <button type="submit">Aplicar cambios</button>
+    </form>
+  </article>
+</section>
+
+<section class="card block">
+  <h2>Reportes</h2>
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr>
+          <th>ID</th>
+          <th>Tipo</th>
+          <th>Razón</th>
+          <th>Estado</th>
+          <th>Acción</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr *ngFor="let report of reports()">
+          <td>{{ report.id }}</td>
+          <td>{{ report.targetType }}</td>
+          <td>{{ report.reason }}</td>
+          <td>{{ report.status }}</td>
+          <td>
+            <select #statusSelect [value]="report.status">
+              <option value="OPEN">OPEN</option>
+              <option value="IN_REVIEW">IN_REVIEW</option>
+              <option value="RESOLVED">RESOLVED</option>
+              <option value="REJECTED">REJECTED</option>
+            </select>
+            <button type="button" (click)="updateReportFromValue(report.id, statusSelect.value)">Guardar</button>
+          </td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+</section>
+
+<section class="card block">
+  <h2>Auditoría</h2>
+  <ul>
+    <li *ngFor="let item of audit()">
+      {{ item.createdAt | date: 'short' }} · {{ item.entityType }} · {{ item.action }}
+    </li>
+  </ul>
+</section>

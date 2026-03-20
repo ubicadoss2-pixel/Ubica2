@@ -1,0 +1,95 @@
+h1 {
+  margin: 0;
+  font-family: var(--font-display);
+}
+
+.subtitle {
+  color: var(--text-soft);
+}
+
+.cards-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1rem;
+  margin-top: 0.8rem;
+}
+
+.card {
+  background: rgba(255, 255, 255, 0.86);
+  border: 1px solid rgba(24, 67, 57, 0.16);
+  border-radius: 1rem;
+  padding: 1rem;
+}
+
+h2 {
+  margin-top: 0;
+}
+
+form {
+  display: grid;
+  gap: 0.6rem;
+}
+
+input,
+select,
+button {
+  min-height: 2.35rem;
+  border-radius: 0.6rem;
+  border: 1px solid rgba(24, 64, 56, 0.3);
+  padding: 0.45rem 0.65rem;
+  font: inherit;
+}
+
+button {
+  border: none;
+  background: #1a6a57;
+  color: #fff;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.block {
+  margin-top: 1rem;
+}
+
+.table-wrap {
+  overflow-x: auto;
+}
+
+table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+th,
+td {
+  border-bottom: 1px solid rgba(24, 67, 57, 0.16);
+  padding: 0.6rem;
+  text-align: left;
+  vertical-align: top;
+}
+
+td:first-child {
+  font-family: monospace;
+  font-size: 0.8rem;
+}
+
+td button {
+  margin-left: 0.4rem;
+}
+
+.error {
+  color: #b03c34;
+  font-weight: 600;
+}
+
+.info {
+  color: #1f704a;
+  font-weight: 600;
+}
+
+@media (max-width: 900px) {
+  .cards-grid {
+    grid-template-columns: 1fr;
+  }
+}

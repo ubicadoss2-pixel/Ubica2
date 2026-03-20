@@ -1,0 +1,57 @@
+<div class="plans-page">
+  <section class="plans-hero">
+    <p class="eyebrow">Desbloquea tu potencial</p>
+    <h1>Elige tu Plan</h1>
+    <p class="subtitle">Suscríbete y conviértete en <strong>Owner</strong>. Agrega tus lugares y eventos en Ubica2.</p>
+  </section>
+
+  <p class="error-msg" *ngIf="error()">{{ error() }}</p>
+
+  <div class="my-plan-banner" *ngIf="myPlan()">
+    <span>✅ Tu plan activo: <strong>{{ myPlan()!.plan.name }}</strong> — válido hasta {{ myPlan()!.endDate | date:'dd MMM yyyy' }}</span>
+    <a routerLink="/owner/place/new" class="btn-main">Agregar lugar</a>
+  </div>
+
+  <section class="plans-grid">
+    <article class="plan-card" *ngFor="let plan of plans()" [class.active]="isCurrentPlan(plan.id)">
+      <div class="plan-badge" *ngIf="isCurrentPlan(plan.id)">Tu plan actual</div>
+      <h2>{{ plan.name }}</h2>
+      <div class="plan-price">
+        <span class="price">{{ formatPrice(plan.price) }}</span>
+        <span class="period">/ {{ plan.durationDays }} días</span>
+      </div>
+      <ul class="plan-features">
+        <li>
+          <span class="icon">🏠</span>
+          Hasta <strong>{{ plan.limitPlaces }}</strong> lugares
+        </li>
+        <li>
+          <span class="icon">🎉</span>
+          Hasta <strong>{{ plan.limitEvents }}</strong> eventos
+        </li>
+        <li>
+          <span class="icon">🗺️</span>
+          Aparece en el mapa
+        </li>
+        <li>
+          <span class="icon">👑</span>
+          Rol <strong>Owner</strong> activado
+        </li>
+      </ul>
+      <button
+        class="btn-buy"
+        [disabled]="checkoutLoading() !== null || isCurrentPlan(plan.id)"
+        (click)="buyPlan(plan)"
+      >
+        <span *ngIf="checkoutLoading() !== plan.id">
+          {{ isCurrentPlan(plan.id) ? 'Plan Activo ✓' : 'Comprar ahora' }}
+        </span>
+        <span *ngIf="checkoutLoading() === plan.id">Procesando...</span>
+      </button>
+    </article>
+  </section>
+
+  <div class="plans-empty" *ngIf="plans().length === 0 && !error()">
+    <p>Cargando planes...</p>
+  </div>
+</div>

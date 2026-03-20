@@ -1,0 +1,137 @@
+<div class="create-container">
+  <div class="card wizard-card">
+    <div class="wizard-header">
+      <h2>Editar {{ form.value.name || 'Lugar' }}</h2>
+      <div class="step-indicator">
+        <span [class.active]="currentStep() >= 1">1. Básico</span>
+        <div class="line" [class.active]="currentStep() >= 2"></div>
+        <span [class.active]="currentStep() >= 2">2. Ubicación</span>
+        <div class="line" [class.active]="currentStep() >= 3"></div>
+        <span [class.active]="currentStep() >= 3">3. Detalles y Multimedia</span>
+      </div>
+    </div>
+
+    <form [formGroup]="form" (ngSubmit)="submit()">
+      <div class="wizard-warnings" *ngIf="error()">
+        <p class="error-msg">{{ error() }}</p>
+      </div>
+
+      <!-- PASO 1: INFORMACIÓN BÁSICA -->
+      <section *ngIf="currentStep() === 1" class="wizard-step">
+        <h3>Información Básica</h3>
+        <label>Nombre del Lugar *</label>
+        <input type="text" formControlName="name" placeholder="Ej: Café Central" />
+
+        <label>Categoría (Tipo de Lugar) *</label>
+        <select formControlName="placeTypeId">
+          <option value="">-- Selecciona --</option>
+          <option *ngFor="let type of placeTypes()" [value]="type.id">{{ type.name }}</option>
+        </select>
+
+        <label>Descripción</label>
+        <textarea formControlName="description" rows="4" placeholder="Cuéntanos sobre este lugar..."></textarea>
+      </section>
+
+      <!-- PASO 2: UBICACIÓN -->
+      <section *ngIf="currentStep() === 2" class="wizard-step">
+        <h3>Ubicación Geográfica</h3>
+        
+        <label>Ciudad *</label>
+        <select formControlName="cityId">
+          <option value="">-- Selecciona una ciudad --</option>
+          <option *ngFor="let city of cities()" [value]="city.id">{{ city.name }}</option>
+        </select>
+
+        <label>Dirección Física</label>
+        <input type="text" formControlName="addressLine" placeholder="Av. Principal 123..." />
+        
+        <div class="row">
+          <div class="col">
+            <label>Barrio</label>
+            <input type="text" formControlName="neighborhood" placeholder="Centro" />
+          </div>
+        </div>
+
+        <div class="row coords-row">
+          <div class="col">
+            <label>Latitud (Opcional si usas Dirección)</label>
+            <input type="number" formControlName="latitude" placeholder="4.1234" />
+          </div>
+          <div class="col">
+            <label>Longitud (Opcional si usas Dirección)</label>
+            <input type="number" formControlName="longitude" placeholder="-74.1234" />
+          </div>
+        </div>
+        <p class="help-text">Si dejas Lat/Lng en blanco, nuestro motor calculará automáticamente la de la dirección provista.</p>
+      </section>
+
+      <!-- PASO 3: DETALLES Y MULTIMEDIA -->
+      <section *ngIf="currentStep() === 3" class="wizard-step">
+        <h3>Detalles Finales</h3>
+        
+        <div class="row">
+          <div class="col">
+            <label>Medio de Contacto Principal</label>
+            <select formControlName="contactType">
+              <option value="PHONE">Teléfono</option>
+              <option value="WHATSAPP">WhatsApp</option>
+              <option value="EMAIL">Correo Electrónico</option>
+            </select>
+          </div>
+          <div class="col">
+            <label>Valor de Contacto</label>
+            <input type="text" formControlName="contactValue" placeholder="300 123 4567" />
+          </div>
+        </div>
+
+        <div class="row">
+          <div class="col">
+            <label>Nivel de Precios (1-5)</label>
+            <input type="number" formControlName="priceLevel" min="1" max="5" placeholder="3" />
+          </div>
+          <div class="col">
+            <label>Estado de Publicación</label>
+            <select formControlName="status">
+              <option value="DRAFT">Borrador</option>
+              <option value="PUBLISHED">Publicado Oficial</option>
+            </select>
+          </div>
+        </div>
+
+        <hr />
+        
+        <div class="media-section">
+          <h3>Galería de Fotos <span class="badge">{{ photos().length }} / {{ maxPhotos() }}</span></h3>
+          <p class="plan-info">Tu plan actual permite {{ maxPhotos() }} fotos visuales.</p>
+          
+          <div class="add-photo-bar">
+            <input type="url" #photoInput placeholder="https://unsplash.com/.../foto.jpg" />
+            <button type="button" class="btn-dark" (click)="addPhoto(photoInput.value); photoInput.value = ''">Añadir URL</button>
+          </div>
+
+          <div class="photos-preview-grid">
+            <div class="photo-item" *ngFor="let photo of photos(); let i = index">
+              <img [src]="photo" alt="Lugar Preview" />
+              <button type="button" class="btn-remove" (click)="removePhoto(i)">✕</button>
+            </div>
+            <div class="photo-placeholder" *ngIf="photos().length === 0">
+              🖼️ Sin imágenes
+            </div>
+          </div>
+        </div>
+
+      </section>
+
+      <div class="wizard-footer">
+        <button type="button" class="btn-light" [routerLink]="['/profile']">Cancelar</button>
+        <button type="button" class="btn-light" *ngIf="currentStep() > 1" (click)="prevStep()">Volver</button>
+        <button type="button" class="btn-main ml-auto" *ngIf="currentStep() < totalSteps" (click)="nextStep()">Siguiente</button>
+        <button type="submit" class="btn-success ml-auto" *ngIf="currentStep() === totalSteps">Guardar Cambios</button>
+      </div>
+      
+      <div class="success-banner" *ngIf="info()">
+        ✅ {{ info() }}
+      </div>
+    </form>
+  </div>
+</div>

@@ -1,0 +1,14 @@
+{
+  "compilerOptions": {
+    "target": "ES2020",
+    "module": "commonjs",
+    "moduleResolution": "node",
+    "outDir": "dist",
+    "esModuleInterop": true,
+    "resolveJsonModule": true,
+    "strict": true,
+    "skipLibCheck": true
+  },
+  "include": ["src", "prisma"],
+  "exclude": ["src/modules/businesses/**/*", "src/shared/middlewares/plan-business.middleware.ts", "src/shared/middlewares/plan.middleware.ts"]
+}

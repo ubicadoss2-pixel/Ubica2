@@ -1,0 +1,21 @@
+<section>
+  <h1>Mis favoritos</h1>
+  <p class="subtitle">Lugares guardados desde tu cuenta.</p>
+</section>
+
+<p class="error" *ngIf="error()">{{ error() }}</p>
+
+<section class="grid" *ngIf="items().length; else emptyTpl">
+  <article class="card" *ngFor="let favorite of items()">
+    <h3>{{ favorite.place.name }}</h3>
+    <p>{{ favorite.place.description || 'Sin descripción' }}</p>
+    <div class="actions">
+      <a [routerLink]="['/places', favorite.place.id]" class="btn-main">Ver detalle</a>
+      <button type="button" class="btn-light" (click)="remove(favorite.place.id)">Quitar</button>
+    </div>
+  </article>
+</section>
+
+<ng-template #emptyTpl>
+  <article class="card empty">No tienes lugares favoritos todavía.</article>
+</ng-template>

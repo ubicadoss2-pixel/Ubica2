@@ -1,0 +1,53 @@
+services:
+  mysql:
+    image: mysql:8.0
+    container_name: ubica2-mysql
+    restart: unless-stopped
+    environment:
+      MYSQL_ROOT_PASSWORD: ""
+      MYSQL_ALLOW_EMPTY_PASSWORD: "yes"
+      MYSQL_DATABASE: ubica2_pro
+    ports:
+      - "3307:3306"
+    volumes:
+      - ubica2_mysql_data:/var/lib/mysql
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "127.0.0.1", "-uroot"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+
+  backend:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: ubica2-backend
+    restart: unless-stopped
+    depends_on:
+      mysql:
+        condition: service_healthy
+    command: sh -c "npx prisma migrate deploy && npm run start:prod"
+    environment:
+      DATABASE_URL: mysql://root:@mysql:3306/ubica2_pro
+      JWT_SECRET: ${JWT_SECRET}
+      JWT_REFRESH_SECRET: ${JWT_REFRESH_SECRET}
+      CLOUD_NAME: ${CLOUD_NAME}
+      CLOUD_KEY: ${CLOUD_KEY}
+      CLOUD_SECRET: ${CLOUD_SECRET}
+      PORT: 3000
+    ports:
+      - "3000:3000"
+
+  frontend:
+    build:
+      context: ./fronted
+      dockerfile: Dockerfile
+    container_name: ubica2-frontend
+    restart: unless-stopped
+    depends_on:
+      backend:
+        condition: service_started
+    ports:
+      - "4200:4200"
+volumes:
+  ubica2_mysql_data:

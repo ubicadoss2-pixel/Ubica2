@@ -1,0 +1,59 @@
+<section class="agenda-header">
+  <h1>Agenda de eventos</h1>
+  <p>Filtra por ciudad, día de semana o fecha específica.</p>
+</section>
+
+<section class="card filters">
+  <form [formGroup]="form" (ngSubmit)="onFilter()">
+    <select formControlName="cityId">
+      <option value="">Todas las ciudades</option>
+      <option *ngFor="let city of cities()" [value]="city.id">{{ city.name }}</option>
+    </select>
+    
+    <select formControlName="categoryId">
+      <option value="">Todas las categorías</option>
+      <option *ngFor="let cat of categories()" [value]="cat.id">{{ cat.name }}</option>
+    </select>
+
+    <select formControlName="weekday">
+      <option value="">Todos los días</option>
+      <option value="0">Domingo</option>
+      <option value="1">Lunes</option>
+      <option value="2">Martes</option>
+      <option value="3">Miércoles</option>
+      <option value="4">Jueves</option>
+      <option value="5">Viernes</option>
+      <option value="6">Sábado</option>
+    </select>
+
+    <input type="date" formControlName="date" title="Seleccionar fecha" />
+    <input type="time" formControlName="time" title="Selector de hora" />
+    
+    <button type="button" class="btn-light" (click)="clearFilters()">Eliminar filtros</button>
+  </form>
+</section>
+
+<p class="error" *ngIf="error()">{{ error() }}</p>
+
+<section class="event-grid" *ngIf="!loading(); else loadingTpl">
+  
+  <p class="empty-state" *ngIf="events().length === 0">
+    No se encontraron eventos en esta categoría o no hay resultados para este día.
+  </p>
+  
+  <article class="card event" *ngFor="let event of events()">
+    <span class="tag">{{ event.category?.name || 'General' }}</span>
+    <h3>{{ event.title }}</h3>
+    <p>{{ event.description || 'Sin descripción' }}</p>
+    <div class="meta">
+      <span>{{ event.place?.name }}</span>
+      <span>{{ event.currency }} {{ event.priceFrom || 0 }} - {{ event.priceTo || 0 }}</span>
+      <span *ngIf="event.startTime" class="time-tag">Hora: {{ event.startTime | date:'shortTime' }}</span>
+    </div>
+    <a class="btn" [routerLink]="['/places', event.placeId]">Ver lugar</a>
+  </article>
+</section>
+
+<ng-template #loadingTpl>
+  <div class="card loading">Cargando agenda...</div>
+</ng-template>

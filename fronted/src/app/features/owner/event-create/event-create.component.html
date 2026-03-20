@@ -1,0 +1,130 @@
+<div class="create-container">
+  <div class="card wizard-card">
+    <div class="wizard-header">
+      <h2>Crear Nuevo Evento</h2>
+      <div class="step-indicator">
+        <span [class.active]="currentStep() >= 1">1. Básico</span>
+        <div class="line" [class.active]="currentStep() >= 2"></div>
+        <span [class.active]="currentStep() >= 2">2. Detalles & Fecha</span>
+        <div class="line" [class.active]="currentStep() >= 3"></div>
+        <span [class.active]="currentStep() >= 3">3. Multimedia</span>
+      </div>
+    </div>
+
+    <form [formGroup]="form" (ngSubmit)="submit()">
+      <div class="wizard-warnings" *ngIf="error()">
+        <p class="error-msg">{{ error() }}</p>
+      </div>
+
+      <!-- PASO 1: INFORMACIÓN BÁSICA -->
+      <section *ngIf="currentStep() === 1" class="wizard-step">
+        <h3>Información Básica</h3>
+        <label>Título del Evento *</label>
+        <input type="text" formControlName="title" placeholder="Ej: Concierto en la Playa" />
+
+        <div class="row">
+          <div class="col">
+            <label>Lugar Asociado (Sede) *</label>
+            <select formControlName="placeId">
+              <option value="">-- Selecciona --</option>
+              <option *ngFor="let place of places()" [value]="place.id">{{ place.name }}</option>
+            </select>
+          </div>
+          <div class="col">
+            <label>Categoría</label>
+            <select formControlName="categoryId">
+              <option value="">-- Selecciona --</option>
+              <option *ngFor="let cat of categories()" [value]="cat.id">{{ cat.name }}</option>
+            </select>
+          </div>
+        </div>
+
+        <label>Descripción</label>
+        <textarea formControlName="description" rows="4" placeholder="¿De qué trata este evento?"></textarea>
+      </section>
+
+      <!-- PASO 2: DETALLES, FECHA Y PRECIO -->
+      <section *ngIf="currentStep() === 2" class="wizard-step">
+        <h3>Fechas y Precios</h3>
+        
+        <div class="row">
+          <div class="col">
+            <label>Hora de Inicio *</label>
+            <input type="time" formControlName="startTime" />
+          </div>
+          <div class="col">
+            <label>Hora de Fin</label>
+            <input type="time" formControlName="endTime" />
+          </div>
+        </div>
+
+        <div class="row coords-row">
+          <div class="col">
+            <label>Precio Desde ($)</label>
+            <input type="number" formControlName="priceFrom" placeholder="0" />
+          </div>
+          <div class="col">
+            <label>Precio Hasta ($)</label>
+            <input type="number" formControlName="priceTo" placeholder="50000" />
+          </div>
+        </div>
+
+        <div class="row coords-row">
+          <div class="col">
+            <label>Edad Mínima</label>
+            <input type="number" formControlName="minAge" placeholder="18" />
+          </div>
+          <div class="col">
+            <label>Código de Vestimenta</label>
+            <input type="text" formControlName="dressCode" placeholder="Casual / Elegante" />
+          </div>
+        </div>
+      </section>
+
+      <!-- PASO 3: MULTIMEDIA Y ESTADO -->
+      <section *ngIf="currentStep() === 3" class="wizard-step">
+        <h3>Multimedia y Resumen</h3>
+        
+        <label>Estado del Evento</label>
+        <select formControlName="status">
+          <option value="ACTIVE">Activo y Público</option>
+          <option value="SUSPENDED">Suspendido</option>
+          <option value="CANCELLED">Cancelado</option>
+        </select>
+
+        <hr />
+        
+        <div class="media-section">
+          <h3>Galería del Evento <span class="badge">{{ photos().length }} / {{ maxPhotos() }}</span></h3>
+          <p class="plan-info">Tu plan permite hasta {{ maxPhotos() }} fotos para este evento.</p>
+          
+          <div class="add-photo-bar">
+            <input type="url" #photoInput placeholder="https://unsplash.com/.../evento.jpg" />
+            <button type="button" class="btn-dark" (click)="addPhoto(photoInput.value); photoInput.value = ''">Añadir URL</button>
+          </div>
+
+          <div class="photos-preview-grid">
+            <div class="photo-item" *ngFor="let photo of photos(); let i = index">
+              <img [src]="photo" alt="Evento Preview" />
+              <button type="button" class="btn-remove" (click)="removePhoto(i)">✕</button>
+            </div>
+            <div class="photo-placeholder" *ngIf="photos().length === 0">
+              🖼️ Sin imágenes
+            </div>
+          </div>
+        </div>
+
+      </section>
+
+      <div class="wizard-footer">
+        <button type="button" class="btn-light" *ngIf="currentStep() > 1" (click)="prevStep()">Volver</button>
+        <button type="button" class="btn-main ml-auto" *ngIf="currentStep() < totalSteps" (click)="nextStep()">Siguiente</button>
+        <button type="submit" class="btn-success ml-auto" *ngIf="currentStep() === totalSteps">Publicar Evento</button>
+      </div>
+      
+      <div class="success-banner" *ngIf="info()">
+        🎉 {{ info() }}
+      </div>
+    </form>
+  </div>
+</div>

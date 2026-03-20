@@ -1,0 +1,25 @@
+<section class="auth-card">
+  <h1>Iniciar sesión</h1>
+  <p>Accede para guardar favoritos, reportar y administrar según tu rol.</p>
+
+  <form [formGroup]="form" (ngSubmit)="submit()">
+    <label>
+      Email
+      <input type="email" formControlName="email" placeholder="correo@dominio.com" />
+    </label>
+
+    <label>
+      Contraseña
+      <input type="password" formControlName="password" placeholder="******" />
+    </label>
+
+    <button type="submit" [disabled]="loading()">{{ loading() ? 'Ingresando...' : 'Entrar' }}</button>
+  </form>
+
+  <p class="error" *ngIf="error()">{{ error() }}</p>
+
+  <p class="hint">
+    ¿Aún no tienes cuenta?
+    <a routerLink="/register">Crear cuenta</a>
+  </p>
+</section>

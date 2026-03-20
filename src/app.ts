@@ -1,0 +1,53 @@
+import express from "express";
+import cors from "cors";
+import helmet from "helmet";
+import morgan from "morgan";
+import rateLimit from "express-rate-limit";
+import authRoutes from "./modules/auth/auth.routes";
+import placeRoutes from "./modules/places/place.routes";
+import eventRoutes from "./modules/events/event.routes";
+import catalogRoutes from "./modules/catalogs/catalog.routes";
+import favoriteRoutes from "./modules/favorites/favorite.routes";
+import reportRoutes from "./modules/reports/report.routes";
+import analyticsRoutes from "./modules/analytics/analytics.routes";
+import adminRoutes from "./modules/admin/admin.routes";
+import planRoutes from "./modules/plans/plan.routes";
+import reviewRoutes from "./modules/comments/comment.routes";
+import userRoutes from "./modules/users/user.routes";
+import { errorHandler, notFound } from "./shared/middlewares/error.middleware";
+
+const app = express();
+
+app.use(cors());
+app.use(helmet());
+app.use(morgan("dev"));
+app.use(express.json());
+app.use(
+  rateLimit({
+    windowMs: 60 * 1000,
+    max: 120,
+    standardHeaders: true,
+    legacyHeaders: false,
+  })
+);
+
+app.get("/health", (_req, res) => {
+  res.json({ status: "ok" });
+});
+
+app.use("/api/auth", authRoutes);
+app.use("/api/catalogs", catalogRoutes);
+app.use("/api/places", placeRoutes);
+app.use("/api/events", eventRoutes);
+app.use("/api/favorites", favoriteRoutes);
+app.use("/api/reports", reportRoutes);
+app.use("/api/analytics", analyticsRoutes);
+app.use("/api/admin", adminRoutes);
+app.use("/api/plans", planRoutes);
+app.use("/api/reviews", reviewRoutes);
+app.use("/api/users", userRoutes);
+
+app.use(notFound);
+app.use(errorHandler);
+
+export default app;

@@ -1,0 +1,106 @@
+<section *ngIf="place() as place; else loadingTpl" class="detail">
+  <article class="cover card">
+    <div>
+      <p class="tag">{{ place.placeType?.name || 'Lugar' }}</p>
+      <h1>{{ place.name }}</h1>
+      <div class="rating-badge" *ngIf="avgRating()">
+        ⭐ {{ avgRating() }} <small>({{ totalComments() }} reseñas)</small>
+      </div>
+      <p>{{ place.description || 'Sin descripción registrada.' }}</p>
+      <div class="meta">
+        <span>{{ place.city?.name }}</span>
+        <span>{{ place.addressLine || 'Dirección no registrada' }}</span>
+      </div>
+    </div>
+
+    <div class="actions">
+      <button class="btn-main" type="button" (click)="addFavorite()">Guardar favorito</button>
+      <button class="btn-light" type="button" (click)="viewOnMap()">📍 Ver en el mapa</button>
+    </div>
+  </article>
+
+  <section class="columns">
+    <article class="card panel">
+      <h2>Contactos y redes</h2>
+      <ul>
+        <li *ngFor="let contact of place.contacts">
+          <strong>{{ contact.contactType }}:</strong>
+          <a href="#" (click)="trackContactClick(); $event.preventDefault()">{{ contact.value }}</a>
+        </li>
+      </ul>
+      <ul>
+        <li *ngFor="let social of place.socialLinks">
+          <strong>{{ social.platform }}:</strong>
+          <a [href]="social.url" target="_blank" rel="noreferrer">{{ social.url }}</a>
+        </li>
+      </ul>
+    </article>
+
+    <article class="card panel">
+      <h2>Horarios</h2>
+      <ul>
+        <li *ngFor="let hour of place.openingHours">
+          Día {{ hour.weekday }}:
+          <span *ngIf="!hour.isClosed">{{ hour.openTime || '--' }} - {{ hour.closeTime || '--' }}</span>
+          <span *ngIf="hour.isClosed">Cerrado</span>
+        </li>
+      </ul>
+    </article>
+  </section>
+
+  <section class="card events">
+    <h2>Eventos del lugar</h2>
+    <div class="event-list" *ngIf="events().length; else emptyEvents">
+      <article class="event" *ngFor="let event of events()">
+        <div>
+          <h3>{{ event.title }}</h3>
+          <p>{{ event.description || 'Sin descripción' }}</p>
+        </div>
+        <button type="button" class="btn-light" (click)="reportEvent(event.id)">Reportar evento</button>
+      </article>
+    </div>
+
+    <ng-template #emptyEvents>
+      <p>No hay eventos disponibles para este lugar.</p>
+    </ng-template>
+  </section>
+
+  <section class="card report">
+    <h2>Reportar información</h2>
+    <form [formGroup]="reportForm" (ngSubmit)="reportPlace()">
+      <select formControlName="reason">
+        <option value="WRONG_INFO">Información incorrecta</option>
+        <option value="SPAM">Spam</option>
+        <option value="INAPPROPRIATE">Contenido inapropiado</option>
+        <option value="CLOSED">Lugar cerrado</option>
+        <option value="OTHER">Otro</option>
+      </select>
+      <textarea rows="4" formControlName="details" placeholder="Detalles opcionales"></textarea>
+      <button class="btn-main" type="submit">Enviar reporte</button>
+    </form>
+  </section>
+
+  <section class="card reviews">
+    <h2>Reseñas y Comentarios</h2>
+    <div class="reviews-list" *ngIf="comments().length; else emptyReviews">
+      <div class="review-item" *ngFor="let comm of comments()">
+        <div class="review-header">
+          <span class="user-name">{{ comm.user?.fullName || 'Usuario Anónimo' }}</span>
+          <span class="review-date">{{ comm.createdAt | date:'shortDate' }}</span>
+          <span class="review-rating" *ngIf="comm.rating">★ {{ comm.rating }}</span>
+        </div>
+        <p class="review-content">{{ comm.content }}</p>
+      </div>
+    </div>
+    <ng-template #emptyReviews>
+      <p class="help-text">Aún no hay reseñas para este lugar. ¡Sé el primero en comentar!</p>
+    </ng-template>
+  </section>
+</section>
+
+<p class="error" *ngIf="error()">{{ error() }}</p>
+<p class="info" *ngIf="info()">{{ info() }}</p>
+
+<ng-template #loadingTpl>
+  <article class="card loading">Cargando detalle...</article>
+</ng-template>

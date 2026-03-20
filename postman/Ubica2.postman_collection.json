@@ -1,0 +1,317 @@
+{
+  "info": {
+    "name": "Ubica2 API",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+    "description": "Coleccion de endpoints para Ubica2 (Node.js + Express + Prisma)."
+  },
+  "variable": [
+    { "key": "baseUrl", "value": "http://localhost:3000" },
+    { "key": "accessToken", "value": "" },
+    { "key": "cityId", "value": "" },
+    { "key": "placeTypeId", "value": "" },
+    { "key": "categoryId", "value": "" },
+    { "key": "placeId", "value": "" },
+    { "key": "eventId", "value": "" },
+    { "key": "reportId", "value": "" }
+  ],
+  "item": [
+    {
+      "name": "Health",
+      "item": [
+        {
+          "name": "GET /health",
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/health"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Auth",
+      "item": [
+        {
+          "name": "POST /api/auth/register",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"user@demo.com\",\n  \"password\": \"123456\",\n  \"fullName\": \"Usuario Demo\",\n  \"phone\": \"3000000000\"\n}"
+            },
+            "url": "{{baseUrl}}/api/auth/register"
+          }
+        },
+        {
+          "name": "POST /api/auth/login",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"admin@ubica2.com\",\n  \"password\": \"123456\"\n}"
+            },
+            "url": "{{baseUrl}}/api/auth/login"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Catalogs",
+      "item": [
+        {
+          "name": "GET /api/catalogs/cities",
+          "request": { "method": "GET", "url": "{{baseUrl}}/api/catalogs/cities" }
+        },
+        {
+          "name": "GET /api/catalogs/place-types",
+          "request": { "method": "GET", "url": "{{baseUrl}}/api/catalogs/place-types" }
+        },
+        {
+          "name": "GET /api/catalogs/event-categories",
+          "request": { "method": "GET", "url": "{{baseUrl}}/api/catalogs/event-categories" }
+        }
+      ]
+    },
+    {
+      "name": "Places",
+      "item": [
+        {
+          "name": "GET /api/places",
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/api/places?cityId={{cityId}}&placeTypeId={{placeTypeId}}&page=1&pageSize=10"
+          }
+        },
+        {
+          "name": "GET /api/places/:id",
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/api/places/{{placeId}}"
+          }
+        },
+        {
+          "name": "POST /api/places",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{accessToken}}" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"cityId\": \"{{cityId}}\",\n  \"placeTypeId\": \"{{placeTypeId}}\",\n  \"name\": \"Mi Lugar\",\n  \"description\": \"Descripcion del lugar\",\n  \"addressLine\": \"Calle 123\",\n  \"neighborhood\": \"Centro\",\n  \"latitude\": 4.65,\n  \"longitude\": -74.05,\n  \"priceLevel\": 2,\n  \"status\": \"PUBLISHED\",\n  \"contacts\": [\n    {\n      \"contactType\": \"WHATSAPP\",\n      \"value\": \"+573000000000\",\n      \"isPrimary\": true\n    }\n  ],\n  \"socialLinks\": [\n    {\n      \"platform\": \"INSTAGRAM\",\n      \"url\": \"https://instagram.com/\"\n    }\n  ],\n  \"openingHours\": [\n    {\n      \"weekday\": 5,\n      \"openTime\": \"18:00:00\",\n      \"closeTime\": \"23:59:00\",\n      \"isClosed\": false\n    }\n  ]\n}"
+            },
+            "url": "{{baseUrl}}/api/places"
+          }
+        },
+        {
+          "name": "PATCH /api/places/:id",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{accessToken}}" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"description\": \"Descripcion actualizada\"\n}"
+            },
+            "url": "{{baseUrl}}/api/places/{{placeId}}"
+          }
+        },
+        {
+          "name": "PATCH /api/places/:id/status",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{accessToken}}" }
+            ],
+            "body": { "mode": "raw", "raw": "{\n  \"status\": \"PUBLISHED\"\n}" },
+            "url": "{{baseUrl}}/api/places/{{placeId}}/status"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Events",
+      "item": [
+        {
+          "name": "GET /api/events/agenda",
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/api/events/agenda?cityId={{cityId}}&weekday=5&page=1&pageSize=10"
+          }
+        },
+        {
+          "name": "GET /api/events/place/:placeId",
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/api/events/place/{{placeId}}?weekday=5"
+          }
+        },
+        {
+          "name": "GET /api/events/:id",
+          "request": { "method": "GET", "url": "{{baseUrl}}/api/events/{{eventId}}" }
+        },
+        {
+          "name": "POST /api/events",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{accessToken}}" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"placeId\": \"{{placeId}}\",\n  \"categoryId\": \"{{categoryId}}\",\n  \"title\": \"Noche de Salsa\",\n  \"description\": \"Evento demo\",\n  \"startTime\": \"20:00:00\",\n  \"endTime\": \"23:00:00\",\n  \"status\": \"ACTIVE\",\n  \"recurrence\": {\n    \"weekday\": 5\n  }\n}"
+            },
+            "url": "{{baseUrl}}/api/events"
+          }
+        },
+        {
+          "name": "PATCH /api/events/:id",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{accessToken}}" }
+            ],
+            "body": { "mode": "raw", "raw": "{\n  \"description\": \"Evento actualizado\"\n}" },
+            "url": "{{baseUrl}}/api/events/{{eventId}}"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Favorites",
+      "item": [
+        {
+          "name": "GET /api/favorites",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{accessToken}}" }],
+            "url": "{{baseUrl}}/api/favorites"
+          }
+        },
+        {
+          "name": "POST /api/favorites/:placeId",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Authorization", "value": "Bearer {{accessToken}}" }],
+            "url": "{{baseUrl}}/api/favorites/{{placeId}}"
+          }
+        },
+        {
+          "name": "DELETE /api/favorites/:placeId",
+          "request": {
+            "method": "DELETE",
+            "header": [{ "key": "Authorization", "value": "Bearer {{accessToken}}" }],
+            "url": "{{baseUrl}}/api/favorites/{{placeId}}"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Reports",
+      "item": [
+        {
+          "name": "POST /api/reports",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"targetType\": \"PLACE\",\n  \"placeId\": \"{{placeId}}\",\n  \"reason\": \"WRONG_INFO\",\n  \"details\": \"Informacion incorrecta\"\n}"
+            },
+            "url": "{{baseUrl}}/api/reports"
+          }
+        },
+        {
+          "name": "GET /api/reports",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{accessToken}}" }],
+            "url": "{{baseUrl}}/api/reports?status=OPEN"
+          }
+        },
+        {
+          "name": "PATCH /api/reports/:id",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{accessToken}}" }
+            ],
+            "body": { "mode": "raw", "raw": "{\n  \"status\": \"RESOLVED\"\n}" },
+            "url": "{{baseUrl}}/api/reports/{{reportId}}"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Analytics",
+      "item": [
+        {
+          "name": "POST /api/analytics",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"eventType\": \"PLACE_VIEW\",\n  \"placeId\": \"{{placeId}}\"\n}"
+            },
+            "url": "{{baseUrl}}/api/analytics"
+          }
+        },
+        {
+          "name": "GET /api/analytics/summary",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{accessToken}}" }],
+            "url": "{{baseUrl}}/api/analytics/summary"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Admin",
+      "item": [
+        {
+          "name": "PATCH /api/admin/places/:id/status",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{accessToken}}" }
+            ],
+            "body": { "mode": "raw", "raw": "{\n  \"status\": \"PUBLISHED\"\n}" },
+            "url": "{{baseUrl}}/api/admin/places/{{placeId}}/status"
+          }
+        },
+        {
+          "name": "PATCH /api/admin/events/:id/status",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{accessToken}}" }
+            ],
+            "body": { "mode": "raw", "raw": "{\n  \"status\": \"SUSPENDED\"\n}" },
+            "url": "{{baseUrl}}/api/admin/events/{{eventId}}/status"
+          }
+        },
+        {
+          "name": "GET /api/admin/audit",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{accessToken}}" }],
+            "url": "{{baseUrl}}/api/admin/audit"
+          }
+        }
+      ]
+    }
+  ]
+}
+

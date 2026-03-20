@@ -1,0 +1,71 @@
+h1 {
+  margin: 0;
+  font-family: var(--font-display);
+}
+
+.subtitle {
+  color: var(--text-soft);
+}
+
+.grid {
+  margin-top: 0.8rem;
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+  gap: 1rem;
+}
+
+.card {
+  background: rgba(255, 255, 255, 0.86);
+  border: 1px solid rgba(24, 67, 57, 0.16);
+  border-radius: 1rem;
+  padding: 1rem;
+}
+
+.card h3,
+.card p {
+  margin: 0;
+}
+
+.card p {
+  color: var(--text-soft);
+  margin-top: 0.45rem;
+}
+
+.actions {
+  margin-top: 0.8rem;
+  display: flex;
+  gap: 0.55rem;
+}
+
+.btn-main,
+.btn-light {
+  flex: 1;
+  text-align: center;
+  text-decoration: none;
+  border: none;
+  border-radius: 0.65rem;
+  min-height: 2.2rem;
+  display: grid;
+  place-items: center;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.btn-main {
+  background: #1c4f8d;
+  color: #fff;
+}
+
+.btn-light {
+  background: #efe8d9;
+  color: #7f4f15;
+}
+
+.empty {
+  margin-top: 0.8rem;
+}
+
+.error {
+  color: #b03c34;
+  font-weight: 600;
+}

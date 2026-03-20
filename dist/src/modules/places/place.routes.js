@@ -1,0 +1,13 @@
+"use strict";
+Object.defineProperty(exports, "__esModule", { value: true });
+const express_1 = require("express");
+const auth_middleware_1 = require("../../shared/middlewares/auth.middleware");
+const role_middleware_1 = require("../../shared/middlewares/role.middleware");
+const place_controller_1 = require("./place.controller");
+const router = (0, express_1.Router)();
+router.get("/", auth_middleware_1.optionalAuth, place_controller_1.list);
+router.get("/:id", place_controller_1.getById);
+router.post("/", auth_middleware_1.authMiddleware, (0, role_middleware_1.authorize)("OWNER", "ADMIN"), place_controller_1.create);
+router.patch("/:id", auth_middleware_1.authMiddleware, (0, role_middleware_1.authorize)("OWNER", "ADMIN"), place_controller_1.update);
+router.patch("/:id/status", auth_middleware_1.authMiddleware, (0, role_middleware_1.authorize)("ADMIN"), place_controller_1.updateStatus);
+exports.default = router;

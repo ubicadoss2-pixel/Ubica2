@@ -1,0 +1,35 @@
+<section class="auth-card">
+  <h1>Crear cuenta</h1>
+  <p>Regístrate para interactuar con Ubica2 como usuario final.</p>
+
+  <form [formGroup]="form" (ngSubmit)="submit()">
+    <label>
+      Nombre completo
+      <input type="text" formControlName="fullName" placeholder="Tu nombre" />
+    </label>
+
+    <label>
+      Email
+      <input type="email" formControlName="email" placeholder="correo@dominio.com" />
+    </label>
+
+    <label>
+      Teléfono (opcional)
+      <input type="text" formControlName="phone" placeholder="+57..." />
+    </label>
+
+    <label>
+      Contraseña
+      <input type="password" formControlName="password" placeholder="******" />
+    </label>
+
+    <button type="submit" [disabled]="loading()">{{ loading() ? 'Creando...' : 'Crear cuenta' }}</button>
+  </form>
+
+  <p class="error" *ngIf="error()">{{ error() }}</p>
+
+  <p class="hint">
+    ¿Ya tienes cuenta?
+    <a routerLink="/login">Inicia sesión</a>
+  </p>
+</section>

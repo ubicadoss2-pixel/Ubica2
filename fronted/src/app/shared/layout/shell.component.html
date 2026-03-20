@@ -1,0 +1,28 @@
+<div class="shell-bg"></div>
+<header class="topbar">
+  <a routerLink="/" class="brand">Ubica2 Pro</a>
+
+  <nav class="nav-links">
+    <a routerLink="/" routerLinkActive="active" [routerLinkActiveOptions]="{ exact: true }">Explorar</a>
+    <a routerLink="/agenda" routerLinkActive="active">Agenda</a>
+    <a *ngIf="authStore.isAuthenticated()" routerLink="/favorites" routerLinkActive="active">Favoritos</a>
+    <a *ngIf="!authStore.hasRole('OWNER', 'ADMIN')" routerLink="/plans" routerLinkActive="active" class="nav-plans">⭐ Planes</a>
+    <a *ngIf="authStore.isAuthenticated()" routerLink="/profile" routerLinkActive="active">Mi Perfil</a>
+    <a *ngIf="authStore.hasRole('OWNER', 'ADMIN')" routerLink="/owner/place/new" routerLinkActive="active">Crear Lugar</a>
+    <a *ngIf="authStore.hasRole('OWNER', 'ADMIN')" routerLink="/owner/event/new" routerLinkActive="active">Crear Evento</a>
+    <a *ngIf="authStore.hasRole('ADMIN')" routerLink="/admin" routerLinkActive="active">Admin</a>
+  </nav>
+
+  <div class="auth-block">
+    <span *ngIf="authStore.user()" class="user-chip">{{ authStore.user()?.role }}</span>
+    <a *ngIf="!authStore.isAuthenticated()" routerLink="/login" class="btn ghost">Ingresar</a>
+    <a *ngIf="!authStore.isAuthenticated()" routerLink="/register" class="btn solid">Crear cuenta</a>
+    <button *ngIf="authStore.isAuthenticated()" (click)="logout()" class="btn ghost" type="button">
+      Salir
+    </button>
+  </div>
+</header>
+
+<main class="page-container">
+  <router-outlet></router-outlet>
+</main>

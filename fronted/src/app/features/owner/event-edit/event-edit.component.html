@@ -1,0 +1,114 @@
+<div class="create-container">
+  <div class="card wizard-card">
+    <div class="wizard-header">
+      <h2>Editar Evento</h2>
+      <div class="step-indicator">
+        <span [class.active]="currentStep() >= 1">1. Básico</span>
+        <div class="line" [class.active]="currentStep() >= 2"></div>
+        <span [class.active]="currentStep() >= 2">2. Horario</span>
+        <div class="line" [class.active]="currentStep() >= 3"></div>
+        <span [class.active]="currentStep() >= 3">3. Precios y Multimedia</span>
+      </div>
+    </div>
+
+    <form [formGroup]="form" (ngSubmit)="submit()">
+      <div class="wizard-warnings" *ngIf="error()">
+        <p class="error-msg">{{ error() }}</p>
+      </div>
+
+      <section *ngIf="currentStep() === 1" class="wizard-step">
+        <h3>Información General</h3>
+        
+        <label>Lugar Asociado *</label>
+        <select formControlName="placeId">
+          <option value="">-- Elige un lugar --</option>
+          <option *ngFor="let p of myPlaces()" [value]="p.id">{{ p.name }}</option>
+        </select>
+
+        <label>Título del Evento *</label>
+        <input type="text" formControlName="title" placeholder="Ej: Noche de Jazz" />
+
+        <label>Categoría *</label>
+        <select formControlName="categoryId">
+          <option value="">-- Selecciona --</option>
+          <option *ngFor="let cat of categories()" [value]="cat.id">{{ cat.name }}</option>
+        </select>
+
+        <label>Descripción</label>
+        <textarea formControlName="description" rows="3"></textarea>
+      </section>
+
+      <section *ngIf="currentStep() === 2" class="wizard-step">
+        <h3>Fecha y Hora</h3>
+        
+        <div class="row">
+          <div class="col">
+            <label>Hora de Inicio *</label>
+            <input type="time" formControlName="startTime" />
+          </div>
+          <div class="col">
+            <label>Hora Final (Opcional)</label>
+            <input type="time" formControlName="endTime" />
+          </div>
+        </div>
+
+        <label>Recurrencia (Día de la semana)</label>
+        <select formControlName="recurrenceWeekday">
+          <option value="">Sin recurrencia (Una sola vez)</option>
+          <option value="1">Lunes</option>
+          <option value="2">Martes</option>
+          <option value="3">Miércoles</option>
+          <option value="4">Jueves</option>
+          <option value="5">Viernes</option>
+          <option value="6">Sábado</option>
+          <option value="0">Domingo</option>
+        </select>
+        
+        <label>Estado</label>
+        <select formControlName="status">
+          <option value="ACTIVE">Activo</option>
+          <option value="CANCELLED">Cancelado</option>
+          <option value="SUSPENDED">Suspendido</option>
+        </select>
+      </section>
+
+      <section *ngIf="currentStep() === 3" class="wizard-step">
+        <h3>Precios y Media</h3>
+
+        <div class="row">
+          <div class="col">
+            <label>Precio Desde</label>
+            <input type="number" formControlName="priceFrom" />
+          </div>
+          <div class="col">
+            <label>Precio Hasta</label>
+            <input type="number" formControlName="priceTo" />
+          </div>
+        </div>
+
+        <div class="media-section">
+          <h3>Galería <span class="badge">{{ photos().length }}</span></h3>
+          <div class="add-photo-bar">
+            <input type="url" #pInput placeholder="URL de imagen" />
+            <button type="button" class="btn-dark" (click)="addPhoto(pInput.value); pInput.value = ''">Añadir</button>
+          </div>
+          <div class="photos-preview-grid">
+            <div class="photo-item" *ngFor="let photo of photos(); let i = index">
+              <img [src]="photo" />
+              <button type="button" class="btn-remove" (click)="removePhoto(i)">✕</button>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <div class="wizard-footer">
+        <button type="button" class="btn-light" [routerLink]="['/profile']">Cancelar</button>
+        <button type="button" class="btn-light" *ngIf="currentStep() > 1" (click)="prevStep()">Volver</button>
+        <button type="button" class="btn-main ml-auto" *ngIf="currentStep() < totalSteps" (click)="nextStep()">Siguiente</button>
+        <button type="submit" class="btn-success ml-auto" *ngIf="currentStep() === totalSteps">Guardar Cambios</button>
+      </div>
+
+      <div class="success-banner" *ngIf="info()">{{ info() }}</div>
+    </form>
+  </div>
+</div>

@@ -1,0 +1,13 @@
+"use strict";
+Object.defineProperty(exports, "__esModule", { value: true });
+const express_1 = require("express");
+const auth_middleware_1 = require("../../shared/middlewares/auth.middleware");
+const role_middleware_1 = require("../../shared/middlewares/role.middleware");
+const event_controller_1 = require("./event.controller");
+const router = (0, express_1.Router)();
+router.get("/agenda", event_controller_1.agenda);
+router.get("/place/:placeId", event_controller_1.listByPlace);
+router.get("/:id", event_controller_1.getById);
+router.post("/", auth_middleware_1.authMiddleware, (0, role_middleware_1.authorize)("OWNER", "ADMIN"), event_controller_1.create);
+router.patch("/:id", auth_middleware_1.authMiddleware, (0, role_middleware_1.authorize)("OWNER", "ADMIN"), event_controller_1.update);
+exports.default = router;
