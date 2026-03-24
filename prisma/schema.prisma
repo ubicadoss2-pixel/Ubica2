@@ -142,6 +142,14 @@ model User {
   analytics    AnalyticsEvent[]
   auditLogs    AuditLog[]
   userSubscriptions UserPlan[] @relation("UserPlansRelation")
+  passwordResetTokens PasswordResetToken[]
+  preferences        UserPreference[]
+  planFavorites PlanFavorite[]
+  searchHistory SearchHistory[]
+  promotionRedemptions PromotionRedemption[]
+  chatConversations ChatConversation[]
+  blockedUsers      UserBlock[] @relation("BlockedRelation")
+  blockedByUsers   UserBlock[] @relation("BlockerRelation")
 
   @@map("users")
 }
@@ -188,6 +196,7 @@ model Place {
   reports      Report[]
   comments     Comment[]
   analytics    AnalyticsEvent[]
+  promotions   Promotion[]
 
   @@unique([cityId, slug])
   @@index([cityId, placeTypeId])
@@ -417,6 +426,20 @@ model AuditLog {
   @@map("audit_logs")
 }
 
+model UserPreference {
+  id        String   @id @default(uuid())
+  userId    String   @map("user_id")
+  key       String   @db.VarChar(60)
+  value     String   @db.Text
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, key])
+  @@index([userId])
+  @@map("user_preferences")
+}
+
 model Plan {
   id           String      @id @default(uuid())
   name         String      @db.VarChar(100)
@@ -427,6 +450,7 @@ model Plan {
   isActive     Boolean     @default(true) @map("is_active")
   createdAt    DateTime    @default(now()) @map("created_at")
   userPlans    UserPlan[]
+  planFavorites PlanFavorite[]
 
   @@map("plans")
 }
@@ -447,4 +471,141 @@ model UserPlan {
   @@index([planId])
   @@index([isActive])
   @@map("user_plans")
+}
+
+model PlanFavorite {
+  id        String   @id @default(uuid())
+  userId    String   @map("user_id")
+  planId    String   @map("plan_id")
+  createdAt DateTime @default(now()) @map("created_at")
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  plan      Plan     @relation(fields: [planId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, planId])
+  @@index([userId])
+  @@index([planId])
+  @@map("plan_favorites")
+}
+
+model SearchHistory {
+  id          String   @id @default(uuid())
+  userId      String   @map("user_id")
+  query       String   @db.VarChar(255)
+  cityId      String?  @map("city_id")
+  placeTypeId String?  @map("place_type_id")
+  latitude    Decimal? @db.Decimal(9, 6)
+  longitude   Decimal? @db.Decimal(9, 6)
+  radiusKm    Float?   @map("radius_km")
+  resultsCount Int?    @map("results_count")
+  createdAt   DateTime @default(now()) @map("created_at")
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, createdAt])
+  @@index([userId])
+  @@map("search_history")
+}
+
+model PasswordResetToken {
+  id        String   @id @default(uuid())
+  userId    String   @map("user_id")
+  token     String   @unique @db.VarChar(120)
+  expiresAt DateTime @map("expires_at")
+  usedAt    DateTime? @map("used_at")
+  createdAt DateTime @default(now()) @map("created_at")
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([token])
+  @@index([userId])
+  @@index([expiresAt])
+  @@map("password_reset_tokens")
+}
+
+enum PromotionStatus {
+  DRAFT
+  ACTIVE
+  PAUSED
+  EXPIRED
+}
+
+model Promotion {
+  id          String          @id @default(uuid())
+  placeId     String         @map("place_id")
+  title       String         @db.VarChar(200)
+  description String?        @db.Text
+  discountType String        @map("discount_type") @db.VarChar(20)
+  discountValue Decimal?      @map("discount_value") @db.Decimal(10, 2)
+  code        String?         @unique @db.VarChar(50)
+  minPurchase Decimal?        @map("min_purchase") @db.Decimal(10, 2)
+  maxUses     Int?            @map("max_uses")
+  currentUses Int             @default(0) @map("current_uses")
+  startDate   DateTime       @map("start_date")
+  endDate     DateTime        @map("end_date")
+  status      PromotionStatus @default(DRAFT)
+  imageUrl    String?         @map("image_url")
+  terms       String?         @db.Text
+  createdAt   DateTime        @default(now()) @map("created_at")
+  updatedAt   DateTime        @updatedAt @map("updated_at")
+  deletedAt   DateTime?       @map("deleted_at")
+  place       Place           @relation(fields: [placeId], references: [id], onDelete: Cascade)
+  redemptions PromotionRedemption[]
+
+  @@index([placeId])
+  @@index([status])
+  @@index([startDate, endDate])
+  @@map("promotions")
+}
+
+model PromotionRedemption {
+  id           String    @id @default(uuid())
+  promotionId  String    @map("promotion_id")
+  userId       String    @map("user_id")
+  codeUsed     String?   @map("code_used") @db.VarChar(50)
+  discountUsed Decimal?  @map("discount_used") @db.Decimal(10, 2)
+  redeemedAt   DateTime  @default(now()) @map("redeemed_at")
+  promotion    Promotion @relation(fields: [promotionId], references: [id], onDelete: Cascade)
+  user         User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([promotionId])
+  @@index([userId])
+  @@map("promotion_redemptions")
+}
+
+model ChatConversation {
+  id        String   @id @default(uuid())
+  userId    String   @map("user_id")
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  messages  ChatMessage[]
+
+  @@index([userId])
+  @@map("chat_conversations")
+}
+
+model ChatMessage {
+  id             String   @id @default(uuid())
+  conversationId String   @map("conversation_id")
+  role           String   @db.VarChar(20)
+  content        String   @db.Text
+  metadata       Json?
+  createdAt      DateTime @default(now()) @map("created_at")
+  conversation   ChatConversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+
+  @@index([conversationId])
+  @@map("chat_messages")
+}
+
+model UserBlock {
+  id         String   @id @default(uuid())
+  blockerId  String   @map("blocker_id")
+  blockedId  String   @map("blocked_id")
+  reason     String?  @db.VarChar(255)
+  createdAt  DateTime @default(now()) @map("created_at")
+  blocker    User     @relation("BlockerRelation", fields: [blockerId], references: [id], onDelete: Cascade)
+  blocked    User     @relation("BlockedRelation", fields: [blockedId], references: [id], onDelete: Cascade)
+
+  @@unique([blockerId, blockedId])
+  @@index([blockerId])
+  @@index([blockedId])
+  @@map("user_blocks")
 }

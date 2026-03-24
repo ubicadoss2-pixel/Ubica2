@@ -15,6 +15,9 @@
   <section class="plans-grid">
     <article class="plan-card" *ngFor="let plan of plans()" [class.active]="isCurrentPlan(plan.id)">
       <div class="plan-badge" *ngIf="isCurrentPlan(plan.id)">Tu plan actual</div>
+      <button class="fav-btn" (click)="toggleFavorite(plan, $event)" title="Guardar en favoritos">
+        {{ isFavorite(plan.id) ? '❤️' : '🤍' }}
+      </button>
       <h2>{{ plan.name }}</h2>
       <div class="plan-price">
         <span class="price">{{ formatPrice(plan.price) }}</span>

@@ -1,10 +1,11 @@
 import { CommonModule } from '@angular/common';
-import { Component, inject, OnInit, signal } from '@angular/core';
+import { Component, effect, inject, OnInit, signal } from '@angular/core';
 import { FormBuilder, ReactiveFormsModule } from '@angular/forms';
-import { RouterLink } from '@angular/router';
+import { RouterLink, Router } from '@angular/router';
 import { CatalogItem, City, EventItem } from '../../core/models/api.models';
 import { CatalogsService } from '../../core/services/catalogs.service';
 import { EventsService } from '../../core/services/events.service';
+import { AppStateService } from '../../core/services/app-state.service';
 
 @Component({
   selector: 'app-agenda',
@@ -17,6 +18,8 @@ export class AgendaComponent implements OnInit {
   private readonly fb = inject(FormBuilder);
   private readonly eventsService = inject(EventsService);
   private readonly catalogsService = inject(CatalogsService);
+  private readonly appState = inject(AppStateService);
+  private readonly router = inject(Router);
 
   readonly cities = signal<City[]>([]);
   readonly categories = signal<CatalogItem[]>([]);
@@ -37,6 +40,18 @@ export class AgendaComponent implements OnInit {
     this.catalogsService.getCities().subscribe((cities) => this.cities.set(cities));
     this.catalogsService.getEventCategories().subscribe((cats) => this.categories.set(cats));
     this.loadAgenda();
+
+    // Listen for app state changes to reload data
+    effect(() => {
+      this.appState.refreshPlaces();
+      console.log('[AGENDA] Refreshing events...');
+      this.loadAgenda();
+    });
+
+    // Listen for route changes
+    this.router.events.subscribe(() => {
+      this.loadAgenda();
+    });
   }
 
   ngOnInit() {

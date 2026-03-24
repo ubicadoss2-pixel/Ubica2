@@ -3,6 +3,7 @@ import { AdminComponent } from './features/admin/admin.component';
 import { AgendaComponent } from './features/agenda/agenda.component';
 import { LoginComponent } from './features/auth/login/login.component';
 import { RegisterComponent } from './features/auth/register/register.component';
+import { ForgotPasswordComponent } from './features/auth/forgot-password/forgot-password.component';
 import { FavoritesComponent } from './features/favorites/favorites.component';
 import { HomeComponent } from './features/home/home.component';
 import { EventCreateComponent } from './features/owner/event-create/event-create.component';
@@ -12,6 +13,8 @@ import { EventEditComponent } from './features/owner/event-edit/event-edit.compo
 import { PlaceDetailComponent } from './features/place-detail/place-detail.component';
 import { PlansComponent } from './features/plans/plans.component';
 import { PlansSuccessComponent } from './features/plans/plans-success.component';
+import { PromotionsComponent } from './features/promotions/promotions.component';
+import { ChatbotComponent } from './features/chatbot/chatbot.component';
 import { authGuard, roleGuard } from './core/guards/auth.guard';
 import { ProfileComponent } from './features/profile/profile.component';
 import { ShellComponent } from './shared/layout/shell.component';
@@ -26,7 +29,10 @@ export const routes: Routes = [
       { path: 'places/:id', component: PlaceDetailComponent },
       { path: 'login', component: LoginComponent },
       { path: 'register', component: RegisterComponent },
+      { path: 'forgot-password', component: ForgotPasswordComponent },
       { path: 'plans', component: PlansComponent },
+      { path: 'promotions', component: PromotionsComponent },
+      { path: 'chatbot', component: ChatbotComponent, canActivate: [authGuard] },
       { path: 'plans/success', component: PlansSuccessComponent, canActivate: [authGuard] },
       { path: 'favorites', component: FavoritesComponent, canActivate: [authGuard] },
       { path: 'owner/place/new', component: PlaceCreateComponent, canActivate: [roleGuard('OWNER', 'ADMIN')] },

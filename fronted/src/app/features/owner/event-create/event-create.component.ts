@@ -1,10 +1,12 @@
 import { CommonModule } from '@angular/common';
 import { Component, inject, signal } from '@angular/core';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
+import { Router } from '@angular/router';
 import { CatalogsService } from '../../../core/services/catalogs.service';
 import { EventsService } from '../../../core/services/events.service';
 import { PlacesService } from '../../../core/services/places.service';
 import { PlansService, UserPlan } from '../../../core/services/plans.service';
+import { AppStateService } from '../../../core/services/app-state.service';
 
 @Component({
   selector: 'app-event-create',
@@ -19,6 +21,8 @@ export class EventCreateComponent {
   private readonly placesService = inject(PlacesService);
   private readonly catalogsService = inject(CatalogsService);
   private readonly plansService = inject(PlansService);
+  private readonly router = inject(Router);
+  private readonly appState = inject(AppStateService);
 
   readonly places = signal<Array<{ id: string; name: string }>>([]);
   readonly categories = signal<Array<{ id: string; name: string }>>([]);
@@ -143,9 +147,10 @@ export class EventCreateComponent {
       next: (event) => {
         this.info.set(`Evento creado: ${event.title}`);
         this.error.set(null);
-        this.form.reset();
-        this.currentStep.set(1);
-        this.photos.set([]);
+        this.appState.triggerPlacesRefresh();
+        setTimeout(() => {
+          this.router.navigate(['/agenda']);
+        }, 1500);
       },
       error: (err) => this.error.set(err?.error?.message ?? 'No fue posible crear el evento.'),
     });

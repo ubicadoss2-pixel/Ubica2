@@ -7,6 +7,7 @@
     <a routerLink="/agenda" routerLinkActive="active">Agenda</a>
     <a *ngIf="authStore.isAuthenticated()" routerLink="/favorites" routerLinkActive="active">Favoritos</a>
     <a *ngIf="!authStore.hasRole('OWNER', 'ADMIN')" routerLink="/plans" routerLinkActive="active" class="nav-plans">⭐ Planes</a>
+    <a routerLink="/promotions" routerLinkActive="active">🔥 Promos</a>
     <a *ngIf="authStore.isAuthenticated()" routerLink="/profile" routerLinkActive="active">Mi Perfil</a>
     <a *ngIf="authStore.hasRole('OWNER', 'ADMIN')" routerLink="/owner/place/new" routerLinkActive="active">Crear Lugar</a>
     <a *ngIf="authStore.hasRole('OWNER', 'ADMIN')" routerLink="/owner/event/new" routerLinkActive="active">Crear Evento</a>
@@ -26,3 +27,5 @@
 <main class="page-container">
   <router-outlet></router-outlet>
 </main>
+
+<app-chatbot-widget></app-chatbot-widget>

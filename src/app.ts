@@ -14,6 +14,12 @@ import adminRoutes from "./modules/admin/admin.routes";
 import planRoutes from "./modules/plans/plan.routes";
 import reviewRoutes from "./modules/comments/comment.routes";
 import userRoutes from "./modules/users/user.routes";
+import preferenceRoutes from "./modules/preferences/preferences.routes";
+import planFavoriteRoutes from "./modules/plan-favorites/plan-favorites.routes";
+import searchHistoryRoutes from "./modules/search-history/search-history.routes";
+import promotionRoutes from "./modules/promotions/promotions.routes";
+import chatbotRoutes from "./modules/chatbot/chatbot.routes";
+import userBlockRoutes from "./modules/user-blocks/user-blocks.routes";
 import { errorHandler, notFound } from "./shared/middlewares/error.middleware";
 
 const app = express();
@@ -46,6 +52,12 @@ app.use("/api/admin", adminRoutes);
 app.use("/api/plans", planRoutes);
 app.use("/api/reviews", reviewRoutes);
 app.use("/api/users", userRoutes);
+app.use("/api/preferences", preferenceRoutes);
+app.use("/api/plan-favorites", planFavoriteRoutes);
+app.use("/api/search-history", searchHistoryRoutes);
+app.use("/api/promotions", promotionRoutes);
+app.use("/api/chatbot", chatbotRoutes);
+app.use("/api/user-blocks", userBlockRoutes);
 
 app.use(notFound);
 app.use(errorHandler);

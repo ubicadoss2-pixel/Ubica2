@@ -1,7 +1,7 @@
 import { CommonModule } from '@angular/common';
 import { Component, inject, OnInit, signal } from '@angular/core';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
-import { ActivatedRoute, Router } from '@angular/router';
+import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { CatalogsService } from '../../../core/services/catalogs.service';
 import { PlacesService } from '../../../core/services/places.service';
 import { PlansService, UserPlan } from '../../../core/services/plans.service';
@@ -9,7 +9,7 @@ import { PlansService, UserPlan } from '../../../core/services/plans.service';
 @Component({
   selector: 'app-place-edit',
   standalone: true,
-  imports: [CommonModule, ReactiveFormsModule],
+  imports: [CommonModule, ReactiveFormsModule, RouterLink],
   templateUrl: './place-edit.component.html',
   styleUrl: '../place-create/place-create.component.scss', // Reusing SCSS
 })

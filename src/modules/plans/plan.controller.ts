@@ -41,8 +41,23 @@ export const checkout = async (req: Request, res: Response) => {
     const userId = (req as any).user.id;
     const { planId } = req.body;
     if (!planId) return res.status(400).json({ error: "planId es requerido" });
-    const result = await createCheckoutSession(planId, userId);
-    res.json(result);
+    
+    try {
+      const result = await createCheckoutSession(planId, userId);
+      res.json(result);
+    } catch (stripeError: any) {
+      if (stripeError.message?.includes("Stripe no configurado")) {
+        // Si Stripe no está configurado, usar suscripción directa
+        const subscription = await subscribeToPlan(userId, planId);
+        res.status(201).json({ 
+          demoMode: true, 
+          message: "Suscripcion activada en modo demo",
+          subscription 
+        });
+      } else {
+        throw stripeError;
+      }
+    }
   } catch (error: any) {
     res.status(500).json({ error: error.message });
   }

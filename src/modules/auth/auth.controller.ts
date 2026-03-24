@@ -1,6 +1,6 @@
 import { Request, Response } from "express";
-import { loginSchema, registerSchema } from "./auth.schema";
-import { loginUser, registerUser, getUpdatedUserSession } from "./auth.service";
+import { loginSchema, registerSchema, forgotPasswordSchema, resetPasswordSchema } from "./auth.schema";
+import { loginUser, registerUser, getUpdatedUserSession, forgotPassword, resetPassword } from "./auth.service";
 
 export const register = async (req: Request, res: Response) => {
   try {
@@ -29,6 +29,26 @@ export const me = async (req: Request, res: Response) => {
     res.json(session);
   } catch (error: any) {
     res.status(401).json({ message: error.message });
+  }
+};
+
+export const forgotPwd = async (req: Request, res: Response) => {
+  try {
+    const validated = forgotPasswordSchema.parse(req.body);
+    const result = await forgotPassword(validated);
+    res.json(result);
+  } catch (error: any) {
+    res.status(400).json({ message: error.message });
+  }
+};
+
+export const resetPwd = async (req: Request, res: Response) => {
+  try {
+    const validated = resetPasswordSchema.parse(req.body);
+    const result = await resetPassword(validated);
+    res.json(result);
+  } catch (error: any) {
+    res.status(400).json({ message: error.message });
   }
 };
 

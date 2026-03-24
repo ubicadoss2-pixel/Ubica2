@@ -1,7 +1,9 @@
 import { CommonModule } from '@angular/common';
-import { Component, effect, inject, signal } from '@angular/core';
+import { Component, effect, inject, signal, OnInit } from '@angular/core';
 import { FormBuilder, ReactiveFormsModule } from '@angular/forms';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
+import { Subject } from 'rxjs';
+import { switchMap, tap } from 'rxjs/operators';
 import { finalize } from 'rxjs/operators';
 import { City, Place } from '../../core/models/api.models';
 import { AnalyticsService } from '../../core/services/analytics.service';
@@ -9,6 +11,7 @@ import { AuthStoreService } from '../../core/services/auth-store.service';
 import { CatalogsService } from '../../core/services/catalogs.service';
 import { FavoritesService } from '../../core/services/favorites.service';
 import { PlacesService } from '../../core/services/places.service';
+import { AppStateService } from '../../core/services/app-state.service';
 import * as L from 'leaflet';
 import 'leaflet-routing-machine';
 
@@ -19,12 +22,13 @@ import 'leaflet-routing-machine';
   templateUrl: './home.component.html',
   styleUrl: './home.component.scss',
 })
-export class HomeComponent {
+export class HomeComponent implements OnInit {
   private readonly fb = inject(FormBuilder);
   private readonly catalogsService = inject(CatalogsService);
   private readonly placesService = inject(PlacesService);
   private readonly favoritesService = inject(FavoritesService);
   private readonly analyticsService = inject(AnalyticsService);
+  private readonly appState = inject(AppStateService);
   readonly authStore = inject(AuthStoreService);
 
   readonly cities = signal<City[]>([]);
@@ -54,8 +58,9 @@ export class HomeComponent {
   private searchMarker?: L.Marker;
   private readonly router = inject(Router);
   private readonly route = inject(ActivatedRoute);
+  private refreshTrigger = new Subject<void>();
 
-  constructor() {
+  ngOnInit(): void {
     this.loadCatalogs();
     this.loadPlaces();
     if (this.authStore.hasRole('USER')) {
@@ -72,6 +77,30 @@ export class HomeComponent {
       }
     });
 
+    // Listen for app state changes to reload data
+    effect(() => {
+      this.appState.refreshPlaces();
+      console.log('[APP STATE] Refreshing data...');
+      this.loadCatalogs();
+      this.loadPlaces();
+      if (this.authStore.hasRole('USER')) {
+        this.loadFavorites();
+      }
+    });
+
+    // Listen for route changes to reload data
+    this.router.events.subscribe(() => {
+      this.loadPlaces();
+      this.loadFavorites();
+    });
+  }
+
+  reloadData(): void {
+    this.loadCatalogs();
+    this.loadPlaces();
+    if (this.authStore.hasRole('USER')) {
+      this.loadFavorites();
+    }
   }
 
   private checkQueryParams(): void {

@@ -1,7 +1,7 @@
 import { CommonModule } from '@angular/common';
 import { Component, inject, OnInit, signal } from '@angular/core';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
-import { ActivatedRoute, Router } from '@angular/router';
+import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { CatalogsService } from '../../../core/services/catalogs.service';
 import { EventsService } from '../../../core/services/events.service';
 import { PlacesService } from '../../../core/services/places.service';
@@ -10,7 +10,7 @@ import { PlansService, UserPlan } from '../../../core/services/plans.service';
 @Component({
   selector: 'app-event-edit',
   standalone: true,
-  imports: [CommonModule, ReactiveFormsModule],
+  imports: [CommonModule, ReactiveFormsModule, RouterLink],
   templateUrl: './event-edit.component.html',
   styleUrl: '../event-create/event-create.component.scss',
 })

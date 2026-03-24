@@ -377,6 +377,134 @@ async function main() {
   });
 
   console.log("Seed listo.");
+
+  // --- Plans ---
+  const plans = await Promise.all([
+    prisma.plan.upsert({
+      where: { id: "11111111-1111-1111-1111-111111111111" },
+      update: {},
+      create: {
+        id: "11111111-1111-1111-1111-111111111111",
+        name: "Básico",
+        limitPlaces: 1,
+        limitEvents: 3,
+        price: 29900,
+        durationDays: 30,
+        isActive: true,
+      },
+    }),
+    prisma.plan.upsert({
+      where: { id: "22222222-2222-2222-2222-222222222222" },
+      update: {},
+      create: {
+        id: "22222222-2222-2222-2222-222222222222",
+        name: "Profesional",
+        limitPlaces: 5,
+        limitEvents: 20,
+        price: 79000,
+        durationDays: 30,
+        isActive: true,
+      },
+    }),
+    prisma.plan.upsert({
+      where: { id: "33333333-3333-3333-3333-333333333333" },
+      update: {},
+      create: {
+        id: "33333333-3333-3333-3333-333333333333",
+        name: "Empresarial",
+        limitPlaces: 20,
+        limitEvents: 100,
+        price: 199000,
+        durationDays: 90,
+        isActive: true,
+      },
+    }),
+  ]);
+
+  console.log("Planes creados:", plans.map(p => p.name).join(", "));
+
+  // --- Promociones ---
+  const promotions = await Promise.all([
+    prisma.promotion.createMany({
+      data: [
+        {
+          placeId: placeBogota.id,
+          title: "2x1 en cócteles",
+          description: "Todos los jueves trae a alguien y el segundo trago es gratis",
+          discountType: "BOGO",
+          code: "JUEVES20",
+          startDate: new Date(),
+          endDate: new Date(Date.now() + 90 * 24 * 60 * 60 * 1000),
+          status: "ACTIVE",
+        },
+        {
+          placeId: placeMedellin.id,
+          title: "20% OFF en entradas",
+          description: "Descuento especial en entradas anticipadas",
+          discountType: "PERCENTAGE",
+          discountValue: 20,
+          code: "MEDELLIN20",
+          startDate: new Date(),
+          endDate: new Date(Date.now() + 60 * 24 * 60 * 60 * 1000),
+          status: "ACTIVE",
+        },
+        {
+          placeId: placeBogota.id,
+          title: "Combo after office",
+          description: "$15.000 incluye pinta + snack",
+          discountType: "FIXED",
+          discountValue: 15000,
+          minPurchase: 15000,
+          startDate: new Date(),
+          endDate: new Date(Date.now() + 45 * 24 * 60 * 60 * 1000),
+          status: "ACTIVE",
+        },
+      ],
+      skipDuplicates: true,
+    }),
+  ]);
+
+  console.log("Promociones creadas");
+
+  // --- Preferencias de usuario demo ---
+  await Promise.all([
+    prisma.userPreference.createMany({
+      data: [
+        { userId: regularUser.id, key: "city_id", value: cityBogota.id },
+        { userId: regularUser.id, key: "notifications_enabled", value: "true" },
+        { userId: regularUser.id, key: "radius_km", value: "10" },
+        { userId: regularUser.id, key: "theme", value: "light" },
+      ],
+      skipDuplicates: true,
+    }),
+  ]);
+
+  console.log("Preferencias creadas");
+
+  // --- Historial de búsqueda demo ---
+  await prisma.searchHistory.createMany({
+    data: [
+      { userId: regularUser.id, query: "bares en bogota", cityId: cityBogota.id, resultsCount: 15 },
+      { userId: regularUser.id, query: "fiestas electronica", resultsCount: 8 },
+      { userId: regularUser.id, query: "cafes zona rosa", cityId: cityBogota.id, resultsCount: 12 },
+    ],
+    skipDuplicates: true,
+  });
+
+  console.log("Historial de búsqueda creado");
+
+  // --- Plan favorito demo ---
+  await prisma.planFavorite.createMany({
+    data: [
+      { userId: regularUser.id, planId: plans[0].id },
+      { userId: regularUser.id, planId: plans[1].id },
+    ],
+    skipDuplicates: true,
+  });
+
+  console.log("Planes favoritos creados");
+
+  console.log("Seed completo!");
 }
 
 main()

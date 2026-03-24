@@ -1,9 +1,11 @@
 import { CommonModule } from '@angular/common';
 import { Component, inject, signal } from '@angular/core';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
+import { Router } from '@angular/router';
 import { CatalogsService } from '../../../core/services/catalogs.service';
 import { PlacesService } from '../../../core/services/places.service';
 import { PlansService, UserPlan } from '../../../core/services/plans.service';
+import { AppStateService } from '../../../core/services/app-state.service';
 
 @Component({
   selector: 'app-place-create',
@@ -17,6 +19,8 @@ export class PlaceCreateComponent {
   private readonly catalogsService = inject(CatalogsService);
   private readonly placesService = inject(PlacesService);
   private readonly plansService = inject(PlansService);
+  private readonly router = inject(Router);
+  private readonly appState = inject(AppStateService);
 
   readonly cities = signal<Array<{ id: string; name: string }>>([]);
   readonly placeTypes = signal<Array<{ id: string; name: string }>>([]);
@@ -136,10 +140,10 @@ export class PlaceCreateComponent {
       next: (place) => {
         this.info.set(`Lugar creado: ${place.name}`);
         this.error.set(null);
-        // Reset form to go again or navigate away
-        this.form.reset();
-        this.currentStep.set(1);
-        this.photos.set([]);
+        this.appState.triggerPlacesRefresh();
+        setTimeout(() => {
+          this.router.navigate(['/']);
+        }, 1500);
       },
       error: (err) => this.error.set(err?.error?.message ?? 'No fue posible crear el lugar.'),
     });

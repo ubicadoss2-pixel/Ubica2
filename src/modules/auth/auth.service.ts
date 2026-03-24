@@ -1,7 +1,9 @@
 import { prisma } from "../../config/prisma";
 import { hashPassword, comparePassword } from "../../shared/utils/hash";
 import { generateAccessToken, generateRefreshToken } from "../../shared/utils/jwt";
-import { LoginDTO, RegisterDTO } from "./auth.schema";
+import { sendPasswordResetEmail } from "../../shared/utils/email";
+import { LoginDTO, RegisterDTO, ForgotPasswordDTO, ResetPasswordDTO } from "./auth.schema";
+import { randomBytes } from "crypto";
 
 const normalizeRole = (role?: string) => (role || "").trim().toUpperCase();
 
@@ -119,5 +121,71 @@ export const getUpdatedUserSession = async (userId: string) => {
     accessToken: generateAccessToken(payload),
     refreshToken: generateRefreshToken(payload),
   };
+};
+
+export const forgotPassword = async (data: ForgotPasswordDTO) => {
+  const user = await prisma.user.findUnique({
+    where: { email: data.email },
+  });
+
+  if (!user) {
+    return { sent: false, message: "Si el email existe, se envió un enlace de recuperación" };
+  }
+
+  const token = randomBytes(32).toString("hex");
+  const expiresAt = new Date(Date.now() + 60 * 60 * 1000);
+
+  await prisma.passwordResetToken.deleteMany({
+    where: { userId: user.id },
+  });
+
+  await prisma.passwordResetToken.create({
+    data: {
+      userId: user.id,
+      token,
+      expiresAt,
+    },
+  });
+
+  const sent = await sendPasswordResetEmail(user.email, token);
+
+  return {
+    sent,
+    message: sent
+      ? "Email de recuperación enviado"
+      : "Error al enviar email. Intenta más tarde",
+  };
+};
+
+export const resetPassword = async (data: ResetPasswordDTO) => {
+  const resetToken = await prisma.passwordResetToken.findUnique({
+    where: { token: data.token },
+  });
+
+  if (!resetToken) {
+    throw new Error("Token inválido");
+  }
+
+  if (resetToken.usedAt) {
+    throw new Error("Token ya utilizado");
+  }
+
+  if (new Date() > resetToken.expiresAt) {
+    throw new Error("Token expirado");
+  }
+
+  const hashed = await hashPassword(data.password);
+
+  await prisma.user.update({
+    where: { id: resetToken.userId },
+    data: { passwordHash: hashed },
+  });
+
+  await prisma.passwordResetToken.update({
+    where: { id: resetToken.id },
+    data: { usedAt: new Date() },
+  });
+
+  return { message: "Contraseña actualizada exitosamente" };
 };
 
