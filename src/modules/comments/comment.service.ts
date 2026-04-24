@@ -11,6 +11,16 @@ export const createComment = async (data: CreateCommentDTO, userId: string) => {
     if (!event) throw new Error("Evento no encontrado");
   }
 
+  // Anti-spam: No permitir comentarios idénticos seguidos en un tiempo corto
+  const lastComment = await prisma.comment.findFirst({
+    where: { userId, placeId: data.placeId, eventId: data.eventId },
+    orderBy: { createdAt: "desc" },
+  });
+
+  if (lastComment && lastComment.content === data.content) {
+    throw new Error("Ya publicaste este mismo comentario recientemente.");
+  }
+
   return prisma.comment.create({
     data: {
       userId,

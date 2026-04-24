@@ -15,4 +15,15 @@ export class AdminService extends ApiService {
   audit() {
     return this.http.get<AuditLog[]>(`${this.baseUrl}/admin/audit`);
   }
+
+  getUsers(page: number, pageSize: number, search: string, roleCode: string) {
+    let params: any = { page: page.toString(), pageSize: pageSize.toString() };
+    if (search) params.search = search;
+    if (roleCode) params.roleCode = roleCode;
+    return this.http.get<any>(`${this.baseUrl}/users`, { params });
+  }
+
+  updateUserRole(userId: string, roleCode: string) {
+    return this.http.put<any>(`${this.baseUrl}/users/${userId}/role`, { roleCode });
+  }
 }

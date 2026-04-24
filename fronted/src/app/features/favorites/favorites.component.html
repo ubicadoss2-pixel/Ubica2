@@ -1,21 +1,34 @@
-<section>
-  <h1>Mis favoritos</h1>
-  <p class="subtitle">Lugares guardados desde tu cuenta.</p>
-</section>
+<section class="favorites-page">
+  <div class="page-header">
+    <h1>Mis favoritos</h1>
+    <p class="subtitle">Lugares guardados desde tu cuenta.</p>
+  </div>
 
-<p class="error" *ngIf="error()">{{ error() }}</p>
+  <p class="error" *ngIf="error()">{{ error() }}</p>
 
-<section class="grid" *ngIf="items().length; else emptyTpl">
-  <article class="card" *ngFor="let favorite of items()">
-    <h3>{{ favorite.place.name }}</h3>
-    <p>{{ favorite.place.description || 'Sin descripción' }}</p>
-    <div class="actions">
-      <a [routerLink]="['/places', favorite.place.id]" class="btn-main">Ver detalle</a>
-      <button type="button" class="btn-light" (click)="remove(favorite.place.id)">Quitar</button>
+  <section class="grid" *ngIf="items().length; else emptyTpl">
+    <article class="card" *ngFor="let favorite of items()">
+      <div class="card-image">
+        <img [src]="favorite.place.photos?.[0]?.url || 'https://images.unsplash.com/photo-1514565131-fce0801e5785?auto=format&fit=crop&w=400&q=60'" [alt]="favorite.place.name" />
+        <span class="type-badge">{{ favorite.place.placeType?.name || 'Lugar' }}</span>
+      </div>
+      <div class="card-content">
+        <h3>{{ favorite.place.name }}</h3>
+        <p>{{ favorite.place.description || 'Sin descripción disponible' }}</p>
+        <div class="actions">
+          <a [routerLink]="['/places', favorite.place.id]" class="btn-primary">Ver detalle</a>
+          <button type="button" class="btn-ghost" (click)="remove(favorite.place.id)">Quitar</button>
+        </div>
+      </div>
+    </article>
+  </section>
+
+  <ng-template #emptyTpl>
+    <div class="empty-state">
+      <div class="icon">🤍</div>
+      <h3>Sin favoritos aún</h3>
+      <p>Los lugares que guardes aparecerán aquí.</p>
+      <a routerLink="/" class="btn-primary">Explorar lugares</a>
     </div>
-  </article>
+  </ng-template>
 </section>
-
-<ng-template #emptyTpl>
-  <article class="card empty">No tienes lugares favoritos todavía.</article>
-</ng-template>

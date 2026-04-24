@@ -1,86 +1,134 @@
-<div class="address-search-container" style="padding: 1rem; background: white; border-radius: 8px; margin-bottom: 1rem; display: flex; gap: 10px; flex-wrap: wrap;">
-  <input type="text" #addressInput placeholder="Escribe una dirección (Ej: Calle 123, Ciudad)..." style="flex: 1; min-width: 250px; padding: 0.5rem;" />
-  <button type="button" class="btn-main" (click)="searchAddress(addressInput.value)">Buscar en el mapa</button>
-  <button type="button" class="btn-light" (click)="goToMyLocation(); addressInput.value = ''">📍 Mi ubicación</button>
-</div>
-
-<div id="map" class="map-container card"></div>
-
-<section class="hero">
-  <div>
-    <p class="eyebrow">Descubre lugares con identidad</p>
-    <h1>Frontend profesional para Ubica2</h1>
-    <p>
-      Navega lugares y eventos de forma visual, filtra por ciudad y precio, y gestiona tu experiencia
-      en tiempo real con integración directa al backend.
-    </p>
-  </div>
-</section>
-
-<section class="filters card">
-  <form [formGroup]="form" (ngSubmit)="onFilter()">
-    <input formControlName="search" placeholder="Buscar por nombre" />
-
-    <select formControlName="cityId">
-      <option value="">Todas las ciudades</option>
-      <option *ngFor="let city of cities()" [value]="city.id">{{ city.name }}</option>
-    </select>
-
-    <select formControlName="placeTypeId">
-      <option value="">Todos los tipos</option>
-      <option *ngFor="let type of placeTypes()" [value]="type.id">{{ type.name }}</option>
-    </select>
-
-    <select formControlName="priceLevel">
-      <option value="">Precio</option>
-      <option value="1">$</option>
-      <option value="2">$$</option>
-      <option value="3">$$$</option>
-      <option value="4">$$$$</option>
-      <option value="5">$$$$$</option>
-    </select>
-
-    <label class="switch">
-      <input type="checkbox" formControlName="openNow" />
-      <span>Abierto ahora</span>
-    </label>
-
-    <button type="submit">Filtrar</button>
-  </form>
-</section>
-
-<p class="error" *ngIf="error()">{{ error() }}</p>
-<p class="success" *ngIf="success()" style="color: green; background: #e6ffe6; padding: 10px; border-radius: 4px; margin-bottom: 1rem;">{{ success() }}</p>
-
-<section class="grid" *ngIf="!loading(); else loader">
-  
-  <p class="empty-state" *ngIf="places().length === 0">
-    No se encontraron resultados.
-  </p>
-  <article class="place card" *ngFor="let place of places()">
-    <div class="place-top">
-      <span class="type">{{ place.placeType?.name || 'Lugar' }}</span>
-      <span class="status" [class.pub]="place.status === 'PUBLISHED'">{{ place.status }}</span>
+<div class="explore-page">
+  <!-- Search Bar -->
+  <div class="search-bar">
+    <div class="search-input">
+      <span class="search-icon">🔍</span>
+      <input type="text" #addressInput [placeholder]="'Calibrar ubicación de búsqueda...' | translate" />
     </div>
-
-    <h3>{{ place.name }}</h3>
-    <p>{{ place.description || 'Sin descripción' }}</p>
-
-    <div class="meta">
-      <span>{{ place.city?.name || 'Ciudad no disponible' }}</span>
-      <span *ngIf="place.priceLevel">Nivel {{ place.priceLevel }}/5</span>
-    </div>
-
-    <div class="actions">
-      <a [routerLink]="['/places', place.id]" class="btn-main">Ver detalle</a>
-      <button type="button" class="btn-light" (click)="routeTo(place)">Cómo llegar</button>
-      <button type="button" class="btn-light" (click)="toggleFavorite(place.id)">
-        {{ favoriteIds().has(place.id) ? 'Quitar favorito' : 'Guardar' }}
+    <div class="search-actions">
+      <button class="btn-primary" (click)="searchAddress(addressInput.value)">
+        {{ 'Buscar' | translate }}
+      </button>
+      <button class="btn-ghost" (click)="goToMyLocation(); addressInput.value = ''">
+        <span>📍</span> {{ 'Mi ubicación' | translate }}
       </button>
     </div>
-  </article>
-</section>
+  </div>
 
-<ng-template #loader>
-  <div class="loading card">Cargando lugares...</div>
-</ng-template>
+  <!-- Map -->
+  <div id="map" class="map-container"></div>
+
+  <!-- Hero Section -->
+  <section class="hero-section">
+    <div class="hero-content">
+      <p class="eyebrow">{{ 'Tu Próximo Destino' | translate }}</p>
+      <h1>{{ 'Explora lo que te define' | translate }}</h1>
+      <p class="subtitle">
+        {{ 'Descubre los rincones más auténticos de la ciudad...' | translate }}
+      </p>
+      <div class="hero-badges">
+        <span class="badge">📍 {{ 'Geo-localizado' | translate }}</span>
+        <span class="badge">✨ {{ 'Curado' | translate }}</span>
+        <span class="badge">🔋 {{ 'Tiempo Real' | translate }}</span>
+      </div>
+    </div>
+  </section>
+
+  <!-- Filters -->
+  <section class="filters-section">
+    <form [formGroup]="form" (ngSubmit)="onFilter()" class="filters-form">
+      <div class="field">
+        <label>{{ 'Nombre' | translate }}</label>
+        <input formControlName="search" [placeholder]="'Buscar lugar...' | translate" />
+      </div>
+
+      <div class="field">
+        <label>{{ 'Ciudad' | translate }}</label>
+        <select formControlName="cityId">
+          <option value="">{{ 'Todas las ciudades' | translate }}</option>
+          <option *ngFor="let city of cities()" [value]="city.id">{{ city.name }}</option>
+        </select>
+      </div>
+
+      <div class="field">
+        <label>{{ 'Interés' | translate }}</label>
+        <select formControlName="placeTypeId">
+          <option value="">{{ 'Todos los tipos' | translate }}</option>
+          <option *ngFor="let type of placeTypes()" [value]="type.id">{{ type.name }}</option>
+        </select>
+      </div>
+
+      <div class="field">
+        <label>{{ 'Presupuesto' | translate }}</label>
+        <select formControlName="priceLevel">
+          <option value="">{{ 'Cualquier nivel' | translate }}</option>
+          <option value="1">$</option>
+          <option value="2">$$</option>
+          <option value="3">$$$</option>
+          <option value="4">$$$$</option>
+          <option value="5">$$$$$</option>
+        </select>
+      </div>
+
+      <div class="field field-switch">
+        <label class="switch">
+          <input type="checkbox" formControlName="openNow" />
+          <span>{{ 'Abierto ahora' | translate }}</span>
+        </label>
+      </div>
+
+      <button type="submit" class="btn-filter">{{ 'Actualizar Radar' | translate }}</button>
+    </form>
+  </section>
+
+  <!-- Messages -->
+  <p class="error-msg" *ngIf="error()">{{ error() }}</p>
+  <p class="success-msg" *ngIf="success()">{{ success() }}</p>
+
+  <!-- Places Grid -->
+  <section class="places-section">
+    <!-- Loading State -->
+    <div class="loader" *ngIf="loading()">
+      <div class="spinner"></div>
+      <p>{{ 'Sincronizando radar...' | translate }}</p>
+    </div>
+
+    <!-- Empty State -->
+    <div class="empty-state" *ngIf="!loading() && places().length === 0">
+      <div class="empty-icon">🔭</div>
+      <h3>{{ 'Sin señales' | translate }}</h3>
+      <p>{{ 'Ajusta tu radar para encontrar nuevos lugares.' | translate }}</p>
+    </div>
+
+    <div class="places-grid" *ngIf="!loading() && places().length > 0">
+      <article class="place-card" *ngFor="let place of places()">
+        <div class="card-image">
+          <img [src]="(place.photos && place.photos.length > 0) ? place.photos[0].url : 'https://images.unsplash.com/photo-1514565131-fce0801e5785?auto=format&fit=crop&w=600&q=80'" [alt]="place.name">
+          <span class="type-badge">{{ place.placeType?.name || ('Lugar' | translate) }}</span>
+          <button class="fav-btn" (click)="toggleFavorite(place.id)">
+            {{ favoriteIds().has(place.id) ? '❤️' : '🤍' }}
+          </button>
+        </div>
+
+        <div class="card-body">
+          <h3>{{ place.name }}</h3>
+          <p class="description">{{ place.description || ('Sin descripción disponible' | translate) }}</p>
+          <div class="card-meta">
+            <span class="city" *ngIf="place.city">{{ place.city.name }}</span>
+            <span class="price" *ngIf="place.priceLevel">
+              {{ '$'.repeat(place.priceLevel) }}
+            </span>
+          </div>
+        </div>
+
+        <div class="card-footer">
+          <a [routerLink]="['/places', place.id]" class="btn-detail">{{ 'Ver Detalle' | translate }}</a>
+          <button type="button" class="btn-route" (click)="routeTo(place)">{{ 'Cómo llegar' | translate }}</button>
+          <button type="button" class="btn-save" (click)="toggleFavorite(place.id)">
+            {{ favoriteIds().has(place.id) ? ('Quitar favorito' | translate) : ('Guardar' | translate) }}
+          </button>
+        </div>
+      </article>
+    </div>
+  </section>
+</div>

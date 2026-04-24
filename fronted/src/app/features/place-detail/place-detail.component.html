@@ -82,6 +82,29 @@
 
   <section class="card reviews">
     <h2>Reseñas y Comentarios</h2>
+    
+    <form *ngIf="auth.isAuthenticated()" [formGroup]="commentForm" (ngSubmit)="submitComment()" class="comment-form">
+      <div class="rating-input">
+        <label>Tu calificación:</label>
+        <select formControlName="rating">
+          <option [ngValue]="undefined">Sin calificación</option>
+          <option [ngValue]="5">⭐⭐⭐⭐⭐ (5)</option>
+          <option [ngValue]="4">⭐⭐⭐⭐ (4)</option>
+          <option [ngValue]="3">⭐⭐⭐ (3)</option>
+          <option [ngValue]="2">⭐⭐ (2)</option>
+          <option [ngValue]="1">⭐ (1)</option>
+        </select>
+      </div>
+      <textarea rows="3" formControlName="content" placeholder="Escribe tu reseña..."></textarea>
+      <button class="btn-main" type="submit" [disabled]="commentForm.invalid || commentLoading()">
+        {{ commentLoading() ? 'Enviando...' : 'Publicar reseña' }}
+      </button>
+    </form>
+    
+    <p *ngIf="!auth.isAuthenticated()" class="login-prompt">
+      <a routerLink="/login">Inicia sesión</a> para dejar una reseña.
+    </p>
+
     <div class="reviews-list" *ngIf="comments().length; else emptyReviews">
       <div class="review-item" *ngFor="let comm of comments()">
         <div class="review-header">

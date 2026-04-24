@@ -8,7 +8,7 @@ const bcrypt_1 = __importDefault(require("bcrypt"));
 const prisma = new client_1.PrismaClient();
 async function main() {
     console.log("Seeding Ubica2...");
-    const password = await bcrypt_1.default.hash("123456", 10);
+    const password = await bcrypt_1.default.hash("12345678", 10);
     const [adminRole, ownerRole, userRole] = await Promise.all([
         prisma.role.upsert({
             where: { code: "ADMIN" },
@@ -90,6 +90,22 @@ async function main() {
                 timezone: "America/Bogota",
             },
         }),
+        prisma.city.upsert({
+            where: {
+                countryCode_name_stateRegion: {
+                    countryCode: "CO",
+                    name: "Armenia",
+                    stateRegion: "Quindio",
+                },
+            },
+            update: {},
+            create: {
+                countryCode: "CO",
+                name: "Armenia",
+                stateRegion: "Quindio",
+                timezone: "America/Bogota",
+            },
+        }),
     ]);
     const [barType, cafeType, clubType, restaurantType] = await Promise.all([
         prisma.placeType.upsert({
@@ -111,6 +127,16 @@ async function main() {
             where: { code: "RESTAURANT" },
             update: {},
             create: { code: "RESTAURANT", name: "Restaurant" },
+        }),
+        prisma.placeType.upsert({
+            where: { code: "PARK" },
+            update: {},
+            create: { code: "PARK", name: "Parque" },
+        }),
+        prisma.placeType.upsert({
+            where: { code: "MUSEUM" },
+            update: {},
+            create: { code: "MUSEUM", name: "Museo" },
         }),
     ]);
     const [salsaCat, technoCat, reggaetonCat] = await Promise.all([
@@ -182,12 +208,7 @@ async function main() {
         },
     });
     const placeMedellin = await prisma.place.upsert({
-        where: {
-            cityId_slug: {
-                cityId: cityMedellin.id,
-                slug: "cafe-central",
-            },
-        },
+        where: { cityId_slug: { cityId: cityMedellin.id, slug: "cafe-central" } },
         update: {},
         create: {
             ownerUserId: owner.id,
@@ -202,33 +223,55 @@ async function main() {
             longitude: -75.5650,
             priceLevel: 1,
             status: "PUBLISHED",
-            contacts: {
-                create: [
-                    {
-                        contactType: "PHONE",
-                        value: "+5740000000",
-                        isPrimary: true,
-                    },
-                ],
-            },
-            openingHours: {
-                create: [
-                    {
-                        weekday: 1,
-                        openTime: new Date("1970-01-01T08:00:00Z"),
-                        closeTime: new Date("1970-01-01T18:00:00Z"),
-                        isClosed: false,
-                    },
-                    {
-                        weekday: 6,
-                        openTime: new Date("1970-01-01T10:00:00Z"),
-                        closeTime: new Date("1970-01-01T16:00:00Z"),
-                        isClosed: false,
-                    },
-                ],
-            },
         },
     });
+    const cityArmenia = await prisma.city.findFirst({
+        where: { name: "Armenia" },
+    });
+    if (cityArmenia) {
+        await prisma.place.upsert({
+            where: { cityId_slug: { cityId: cityArmenia.id, slug: "parque-de-la-vida" } },
+            update: {},
+            create: {
+                ownerUserId: owner.id,
+                cityId: cityArmenia.id,
+                placeTypeId: (await prisma.placeType.findFirst({ where: { code: "PARK" } })).id,
+                name: "Parque de la Vida",
+                slug: "parque-de-la-vida",
+                description: "El pulmón verde de la ciudad, ideal para caminar y disfrutar de la naturaleza.",
+                addressLine: "Avenida Bolívar",
+                neighborhood: "Norte",
+                latitude: 4.5501,
+                longitude: -75.6607,
+                priceLevel: 1,
+                status: "PUBLISHED",
+                photos: {
+                    create: [{ url: "https://images.unsplash.com/photo-1542332213-9b5a5a3fab35?auto=format&fit=crop&w=800&q=60", sortOrder: 1 }]
+                }
+            },
+        });
+        await prisma.place.upsert({
+            where: { cityId_slug: { cityId: cityArmenia.id, slug: "museo-del-oro-quimbaya" } },
+            update: {},
+            create: {
+                ownerUserId: owner.id,
+                cityId: cityArmenia.id,
+                placeTypeId: (await prisma.placeType.findFirst({ where: { code: "MUSEUM" } })).id,
+                name: "Museo del Oro Quimbaya",
+                slug: "museo-del-oro-quimbaya",
+                description: "Arquitectura de Rogelio Salmona que alberga tesoros de la cultura Quimbaya.",
+                addressLine: "Carrera 19 # 18 Norte",
+                neighborhood: "Norte",
+                latitude: 4.5615,
+                longitude: -75.6565,
+                priceLevel: 1,
+                status: "PUBLISHED",
+                photos: {
+                    create: [{ url: "https://images.unsplash.com/photo-1596401057633-531035783318?auto=format&fit=crop&w=800&q=60", sortOrder: 1 }]
+                }
+            },
+        });
+    }
     const eventSalsa = await prisma.event.create({
         data: {
             placeId: placeBogota.id,
@@ -317,6 +360,123 @@ async function main() {
         ],
     });
     console.log("Seed listo.");
+    // --- Plans ---
+    const plans = await Promise.all([
+        prisma.plan.upsert({
+            where: { id: "11111111-1111-1111-1111-111111111111" },
+            update: {},
+            create: {
+                id: "11111111-1111-1111-1111-111111111111",
+                name: "Básico",
+                limitPlaces: 1,
+                limitEvents: 3,
+                price: 29900,
+                durationDays: 30,
+                isActive: true,
+            },
+        }),
+        prisma.plan.upsert({
+            where: { id: "22222222-2222-2222-2222-222222222222" },
+            update: {},
+            create: {
+                id: "22222222-2222-2222-2222-222222222222",
+                name: "Profesional",
+                limitPlaces: 5,
+                limitEvents: 20,
+                price: 79000,
+                durationDays: 30,
+                isActive: true,
+            },
+        }),
+        prisma.plan.upsert({
+            where: { id: "33333333-3333-3333-3333-333333333333" },
+            update: {},
+            create: {
+                id: "33333333-3333-3333-3333-333333333333",
+                name: "Empresarial",
+                limitPlaces: 20,
+                limitEvents: 100,
+                price: 199000,
+                durationDays: 90,
+                isActive: true,
+            },
+        }),
+    ]);
+    console.log("Planes creados:", plans.map(p => p.name).join(", "));
+    // --- Promociones ---
+    const promotions = await Promise.all([
+        prisma.promotion.createMany({
+            data: [
+                {
+                    placeId: placeBogota.id,
+                    title: "2x1 en cócteles",
+                    description: "Todos los jueves trae a alguien y el segundo trago es gratis",
+                    discountType: "BOGO",
+                    code: "JUEVES20",
+                    startDate: new Date(),
+                    endDate: new Date(Date.now() + 90 * 24 * 60 * 60 * 1000),
+                    status: "ACTIVE",
+                },
+                {
+                    placeId: placeMedellin.id,
+                    title: "20% OFF en entradas",
+                    description: "Descuento especial en entradas anticipadas",
+                    discountType: "PERCENTAGE",
+                    discountValue: 20,
+                    code: "MEDELLIN20",
+                    startDate: new Date(),
+                    endDate: new Date(Date.now() + 60 * 24 * 60 * 60 * 1000),
+                    status: "ACTIVE",
+                },
+                {
+                    placeId: placeBogota.id,
+                    title: "Combo after office",
+                    description: "$15.000 incluye pinta + snack",
+                    discountType: "FIXED",
+                    discountValue: 15000,
+                    minPurchase: 15000,
+                    startDate: new Date(),
+                    endDate: new Date(Date.now() + 45 * 24 * 60 * 60 * 1000),
+                    status: "ACTIVE",
+                },
+            ],
+            skipDuplicates: true,
+        }),
+    ]);
+    console.log("Promociones creadas");
+    // --- Preferencias de usuario demo ---
+    await Promise.all([
+        prisma.userPreference.createMany({
+            data: [
+                { userId: regularUser.id, key: "city_id", value: cityBogota.id },
+                { userId: regularUser.id, key: "notifications_enabled", value: "true" },
+                { userId: regularUser.id, key: "radius_km", value: "10" },
+                { userId: regularUser.id, key: "theme", value: "light" },
+            ],
+            skipDuplicates: true,
+        }),
+    ]);
+    console.log("Preferencias creadas");
+    // --- Historial de búsqueda demo ---
+    await prisma.searchHistory.createMany({
+        data: [
+            { userId: regularUser.id, query: "bares en bogota", cityId: cityBogota.id, resultsCount: 15 },
+            { userId: regularUser.id, query: "fiestas electronica", resultsCount: 8 },
+            { userId: regularUser.id, query: "cafes zona rosa", cityId: cityBogota.id, resultsCount: 12 },
+        ],
+        skipDuplicates: true,
+    });
+    console.log("Historial de búsqueda creado");
+    // --- Plan favorito demo ---
+    await prisma.planFavorite.createMany({
+        data: [
+            { userId: regularUser.id, planId: plans[0].id },
+            { userId: regularUser.id, planId: plans[1].id },
+        ],
+        skipDuplicates: true,
+    });
+    console.log("Planes favoritos creados");
+    console.log("Seed completo!");
 }
 main()
     .catch((error) => {

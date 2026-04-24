@@ -43,7 +43,7 @@ export class AgendaComponent implements OnInit {
 
     // Listen for app state changes to reload data
     effect(() => {
-      this.appState.refreshPlaces();
+      const _ = this.appState.refreshPlaces$;
       console.log('[AGENDA] Refreshing events...');
       this.loadAgenda();
     });

@@ -5,6 +5,21 @@ const prisma_1 = require("../../config/prisma");
 const slug_1 = require("../../shared/utils/slug");
 const pagination_1 = require("../../shared/utils/pagination");
 const time_1 = require("../../shared/utils/time");
+const geocoding_1 = require("../../shared/utils/geocoding");
+const plan_service_1 = require("../plans/plan.service");
+const comment_service_1 = require("../comments/comment.service");
+const toTime = (value) => {
+    const trimmed = value.trim();
+    if (!trimmed)
+        return null;
+    const parts = trimmed.split(":");
+    const timePart = parts.length === 2 ? `${trimmed}:00` : trimmed;
+    const date = new Date(`1970-01-01T${timePart}Z`);
+    if (isNaN(date.getTime())) {
+        throw new Error(`Formato de hora invalido: ${value}. Use HH:mm o HH:mm:ss`);
+    }
+    return date;
+};
 const buildUniqueSlug = async (cityId, name) => {
     const base = (0, slug_1.slugify)(name);
     let slug = base;
@@ -20,8 +35,23 @@ const buildUniqueSlug = async (cityId, name) => {
         slug = `${base}-${counter}`;
     }
 };
-const createPlace = async (data, ownerUserId) => {
+const createPlace = async (data, ownerUserId, isAdmin) => {
+    await (0, plan_service_1.canCreatePlace)(ownerUserId, isAdmin);
     const slug = await buildUniqueSlug(data.cityId, data.name);
+    let latitude = data.latitude;
+    let longitude = data.longitude;
+    if (latitude === undefined || longitude === undefined) {
+        let queryFallback = data.addressLine;
+        if (!queryFallback || queryFallback.trim() === "") {
+            const city = await prisma_1.prisma.city.findUnique({ where: { id: data.cityId } });
+            if (city)
+                queryFallback = city.name;
+        }
+        const cityObj = await prisma_1.prisma.city.findUnique({ where: { id: data.cityId } });
+        const geo = await (0, geocoding_1.geocodeAddress)(queryFallback, data.postalCode, cityObj?.name);
+        latitude = geo.latitude !== null ? geo.latitude : undefined;
+        longitude = geo.longitude !== null ? geo.longitude : undefined;
+    }
     return prisma_1.prisma.place.create({
         data: {
             ownerUserId,
@@ -32,8 +62,9 @@ const createPlace = async (data, ownerUserId) => {
             description: data.description,
             addressLine: data.addressLine,
             neighborhood: data.neighborhood,
-            latitude: data.latitude,
-            longitude: data.longitude,
+            postalCode: data.postalCode,
+            latitude,
+            longitude,
             priceLevel: data.priceLevel,
             status: data.status || "DRAFT",
             contacts: data.contacts ? { create: data.contacts } : undefined,
@@ -42,9 +73,17 @@ const createPlace = async (data, ownerUserId) => {
                 ? {
                     create: data.openingHours.map((h) => ({
                         weekday: h.weekday,
-                        openTime: h.openTime ? new Date(`1970-01-01T${h.openTime}Z`) : null,
-                        closeTime: h.closeTime ? new Date(`1970-01-01T${h.closeTime}Z`) : null,
+                        openTime: h.openTime ? toTime(h.openTime) : null,
+                        closeTime: h.closeTime ? toTime(h.closeTime) : null,
                         isClosed: h.isClosed ?? false,
+                    })),
+                }
+                : undefined,
+            photos: data.photos
+                ? {
+                    create: data.photos.map((url, index) => ({
+                        url,
+                        sortOrder: index,
                     })),
                 }
                 : undefined,
@@ -63,6 +102,77 @@ const updatePlace = async (placeId, data, userId, isAdmin) => {
     if (data.name && data.name !== place.name) {
         updates.slug = await buildUniqueSlug(place.cityId, data.name);
     }
+    if ((data.addressLine !== undefined || data.postalCode !== undefined) && data.latitude === undefined && data.longitude === undefined) {
+        let queryFallback = data.addressLine !== undefined ? data.addressLine : place.addressLine;
+        if (!queryFallback || queryFallback.trim() === "") {
+            const city = await prisma_1.prisma.city.findUnique({ where: { id: place.cityId } });
+            if (city)
+                queryFallback = city.name;
+        }
+        const cityObj = await prisma_1.prisma.city.findUnique({ where: { id: place.cityId } });
+        const geo = await (0, geocoding_1.geocodeAddress)(queryFallback, data.postalCode !== undefined ? data.postalCode : place.postalCode, cityObj?.name);
+        if (geo.latitude !== null && geo.longitude !== null) {
+            updates.latitude = geo.latitude;
+            updates.longitude = geo.longitude;
+        }
+    }
+    if (data.photos) {
+        updates.photos = {
+            deleteMany: {},
+            create: data.photos.map((url, index) => ({
+                url,
+                sortOrder: index,
+            })),
+        };
+    }
+    if (data.contacts) {
+        updates.contacts = {
+            deleteMany: {},
+            create: data.contacts,
+        };
+    }
+    if (data.socialLinks) {
+        updates.socialLinks = {
+            deleteMany: {},
+            create: data.socialLinks,
+        };
+    }
+    if (data.openingHours) {
+        updates.openingHours = {
+            deleteMany: {},
+            create: data.openingHours.map((h) => ({
+                weekday: h.weekday,
+                openTime: h.openTime ? toTime(h.openTime) : null,
+                closeTime: h.closeTime ? toTime(h.closeTime) : null,
+                isClosed: h.isClosed ?? false,
+            })),
+        };
+    }
+    if (data.contacts) {
+        updates.contacts = {
+            deleteMany: {},
+            create: data.contacts,
+        };
+    }
+    if (data.socialLinks) {
+        updates.socialLinks = {
+            deleteMany: {},
+            create: data.socialLinks,
+        };
+    }
+    if (data.openingHours) {
+        updates.openingHours = {
+            deleteMany: {},
+            create: data.openingHours.map((h) => ({
+                weekday: h.weekday,
+                openTime: h.openTime ? toTime(h.openTime) : null,
+                closeTime: h.closeTime ? toTime(h.closeTime) : null,
+                isClosed: h.isClosed ?? false,
+            })),
+        };
+    }
+    // Remove individual fields already mapped to complex prisma objects
+    delete updates.photos_list; // If any
     return prisma_1.prisma.place.update({
         where: { id: placeId },
         data: updates,
@@ -70,7 +180,7 @@ const updatePlace = async (placeId, data, userId, isAdmin) => {
 };
 exports.updatePlace = updatePlace;
 const getPlaceById = async (placeId) => {
-    return prisma_1.prisma.place.findUnique({
+    const place = await prisma_1.prisma.place.findUnique({
         where: { id: placeId },
         include: {
             city: true,
@@ -81,6 +191,14 @@ const getPlaceById = async (placeId) => {
             photos: true,
         },
     });
+    if (!place)
+        return null;
+    const stats = await (0, comment_service_1.getEntityRatingStats)("placeId", placeId);
+    return {
+        ...place,
+        averageRating: stats.averageRating,
+        totalRatings: stats.totalRatings,
+    };
 };
 exports.getPlaceById = getPlaceById;
 const listPlaces = async (query, userId, role) => {
@@ -92,6 +210,7 @@ const listPlaces = async (query, userId, role) => {
     const status = query.status;
     const search = query.search;
     const priceLevel = query.priceLevel ? Number(query.priceLevel) : undefined;
+    const ownerId = query.ownerId;
     const where = {
         deletedAt: null,
     };
@@ -102,7 +221,9 @@ const listPlaces = async (query, userId, role) => {
     if (priceLevel)
         where.priceLevel = priceLevel;
     if (search)
-        where.name = { contains: search, mode: "insensitive" };
+        where.name = { contains: search }; // Removed mode: 'insensitive' to fix Prisma MySQL/SQLite bug
+    if (ownerId)
+        where.ownerUserId = ownerId;
     if (!role || (role !== "ADMIN" && role !== "OWNER")) {
         where.status = "PUBLISHED";
     }
@@ -120,6 +241,7 @@ const listPlaces = async (query, userId, role) => {
                 city: true,
                 placeType: true,
                 openingHours: true,
+                photos: true,
             },
         }),
     ]);

@@ -4,7 +4,22 @@ exports.listAgenda = exports.listEventsByPlace = exports.getEventById = exports.
 const luxon_1 = require("luxon");
 const prisma_1 = require("../../config/prisma");
 const pagination_1 = require("../../shared/utils/pagination");
-const toTime = (value) => new Date(`1970-01-01T${value}Z`);
+const geocoding_1 = require("../../shared/utils/geocoding");
+const plan_service_1 = require("../plans/plan.service");
+const comment_service_1 = require("../comments/comment.service");
+const toTime = (value) => {
+    const trimmed = value.trim();
+    if (!trimmed)
+        return null;
+    // Support both HH:mm:ss and HH:mm
+    const parts = trimmed.split(":");
+    const timePart = parts.length === 2 ? `${trimmed}:00` : trimmed;
+    const date = new Date(`1970-01-01T${timePart}Z`);
+    if (isNaN(date.getTime())) {
+        throw new Error(`Formato de hora invalido: ${value}. Use HH:mm o HH:mm:ss`);
+    }
+    return date;
+};
 const hasConflict = async (placeId, title, startTime, endTime, recurrenceWeekday, specialDate, excludeEventId) => {
     const baseWhere = {
         placeId,
@@ -42,12 +57,15 @@ const hasConflict = async (placeId, title, startTime, endTime, recurrenceWeekday
     return null;
 };
 const createEvent = async (data, userId, isAdmin) => {
+    await (0, plan_service_1.canCreateEvent)(userId, isAdmin);
     const place = await prisma_1.prisma.place.findUnique({ where: { id: data.placeId } });
     if (!place)
         throw new Error("Lugar no existe");
     if (!isAdmin && place.ownerUserId !== userId)
         throw new Error("No autorizado");
     const startTime = toTime(data.startTime);
+    if (!startTime)
+        throw new Error("Hora de inicio es requerida");
     const endTime = data.endTime ? toTime(data.endTime) : null;
     if (data.recurrence?.weekday !== undefined) {
         const conflict = await hasConflict(data.placeId, data.title, startTime, endTime, data.recurrence.weekday, undefined);
@@ -63,11 +81,22 @@ const createEvent = async (data, userId, isAdmin) => {
                 throw new Error("Conflicto: evento duplicado en la misma fecha");
         }
     }
+    let latitude = data.latitude;
+    let longitude = data.longitude;
+    if (latitude === undefined || longitude === undefined) {
+        latitude = place.latitude ? Number(place.latitude) : undefined;
+        longitude = place.longitude ? Number(place.longitude) : undefined;
+    }
     const createData = {
         placeId: data.placeId,
         categoryId: data.categoryId,
         title: data.title,
         description: data.description,
+        addressLine: data.addressLine,
+        neighborhood: data.neighborhood,
+        postalCode: data.postalCode,
+        latitude,
+        longitude,
         dressCode: data.dressCode,
         minAge: data.minAge,
         currency: data.currency || "COP",
@@ -88,6 +117,14 @@ const createEvent = async (data, userId, isAdmin) => {
                 })),
             }
             : undefined,
+        photos: data.photos
+            ? {
+                create: data.photos.map((url, index) => ({
+                    url,
+                    sortOrder: index,
+                })),
+            }
+            : undefined,
     };
     return prisma_1.prisma.event.create({
         data: createData,
@@ -105,6 +142,8 @@ const updateEvent = async (eventId, data, userId, isAdmin) => {
         throw new Error("No autorizado");
     const startTime = data.startTime ? toTime(data.startTime) : event.startTime;
     const endTime = data.endTime ? toTime(data.endTime) : event.endTime;
+    if (!startTime)
+        throw new Error("Hora de inicio invalida");
     const title = data.title || event.title;
     if (data.recurrence?.weekday !== undefined) {
         const conflict = await hasConflict(event.placeId, title, startTime, endTime, data.recurrence.weekday, undefined, eventId);
@@ -120,10 +159,21 @@ const updateEvent = async (eventId, data, userId, isAdmin) => {
                 throw new Error("Conflicto: evento duplicado en la misma fecha");
         }
     }
+    let latitude = data.latitude;
+    let longitude = data.longitude;
+    if ((data.addressLine !== undefined || data.postalCode !== undefined) && latitude === undefined && longitude === undefined) {
+        const geo = await (0, geocoding_1.geocodeAddress)(data.addressLine !== undefined ? data.addressLine : event.addressLine, data.postalCode !== undefined ? data.postalCode : event.postalCode);
+        if (geo.latitude !== null && geo.longitude !== null) {
+            latitude = geo.latitude;
+            longitude = geo.longitude;
+        }
+    }
     const updateData = {
         categoryId: data.categoryId,
         title: data.title,
         description: data.description,
+        addressLine: data.addressLine,
+        neighborhood: data.neighborhood,
         dressCode: data.dressCode,
         minAge: data.minAge,
         currency: data.currency,
@@ -145,6 +195,15 @@ const updateEvent = async (eventId, data, userId, isAdmin) => {
                 })),
             }
             : undefined,
+        photos: data.photos
+            ? {
+                deleteMany: {},
+                create: data.photos.map((url, index) => ({
+                    url,
+                    sortOrder: index,
+                })),
+            }
+            : undefined,
     };
     return prisma_1.prisma.event.update({
         where: { id: eventId },
@@ -152,8 +211,8 @@ const updateEvent = async (eventId, data, userId, isAdmin) => {
     });
 };
 exports.updateEvent = updateEvent;
-const getEventById = (eventId) => {
-    return prisma_1.prisma.event.findUnique({
+const getEventById = async (eventId) => {
+    const event = await prisma_1.prisma.event.findUnique({
         where: { id: eventId },
         include: {
             place: true,
@@ -162,25 +221,45 @@ const getEventById = (eventId) => {
             specialDates: true,
         },
     });
+    if (!event)
+        return null;
+    const stats = await (0, comment_service_1.getEntityRatingStats)("eventId", eventId);
+    return {
+        ...event,
+        averageRating: stats.averageRating,
+        totalRatings: stats.totalRatings,
+    };
 };
 exports.getEventById = getEventById;
-const filterEventsByDate = (events, date, weekday) => {
-    if (!date && weekday === undefined)
+const filterEventsByDate = (events, date, weekday, time) => {
+    if (!date && weekday === undefined && !time)
         return events;
     const targetDate = date ? luxon_1.DateTime.fromISO(date) : null;
     const targetWeekday = weekday !== undefined ? weekday : (targetDate ? (targetDate.weekday === 7 ? 0 : targetDate.weekday) : undefined);
     return events.filter((event) => {
+        let dateMatch = false;
+        let timeMatch = true;
+        if (time && event.startTime) {
+            const eventTimeStr = luxon_1.DateTime.fromJSDate(event.startTime).toISOTime({ suppressMilliseconds: true, suppressSeconds: true })?.substring(0, 5) || "";
+            if (time.length === 5) {
+                timeMatch = eventTimeStr >= time;
+            }
+            else {
+                timeMatch = eventTimeStr >= time.substring(0, 5);
+            }
+        }
         const occurrences = event.specialDates || [];
         if (date) {
             const hasOccurrence = occurrences.some((sd) => sd.dateType === "OCCURRENCE" && luxon_1.DateTime.fromJSDate(sd.eventDate).toISODate() === targetDate.toISODate());
             const hasException = occurrences.some((sd) => sd.dateType === "EXCEPTION" && luxon_1.DateTime.fromJSDate(sd.eventDate).toISODate() === targetDate.toISODate());
             if (hasOccurrence)
-                return true;
-            if (hasException)
-                return false;
-            return event.recurrence && event.recurrence.weekday === targetWeekday;
+                dateMatch = true;
+            else if (hasException)
+                dateMatch = false;
+            else
+                dateMatch = !!(event.recurrence && event.recurrence.weekday === targetWeekday);
         }
-        if (weekday !== undefined) {
+        else if (weekday !== undefined) {
             const hasOccurrenceOnWeekday = occurrences.some((sd) => {
                 if (sd.dateType !== "OCCURRENCE")
                     return false;
@@ -189,10 +268,14 @@ const filterEventsByDate = (events, date, weekday) => {
                 return wk === weekday;
             });
             if (hasOccurrenceOnWeekday)
-                return true;
-            return event.recurrence && event.recurrence.weekday === weekday;
+                dateMatch = true;
+            else
+                dateMatch = !!(event.recurrence && event.recurrence.weekday === weekday);
         }
-        return false;
+        else {
+            dateMatch = true;
+        }
+        return dateMatch && timeMatch;
     });
 };
 const listEventsByPlace = async (placeId, query) => {
@@ -212,16 +295,27 @@ const listEventsByPlace = async (placeId, query) => {
     return { page, pageSize, total: filtered.length, items: filtered };
 };
 exports.listEventsByPlace = listEventsByPlace;
-const listAgenda = async (query) => {
+const listAgenda = async (query, userId, role) => {
     const page = Number(query.page) || 1;
     const pageSize = Number(query.pageSize) || 10;
     const { skip, take } = (0, pagination_1.getPagination)(page, pageSize);
     const cityId = query.cityId;
+    const categoryId = query.categoryId;
     const weekday = query.weekday !== undefined ? Number(query.weekday) : undefined;
     const date = query.date;
-    const where = { deletedAt: null, place: { status: "PUBLISHED" } };
+    const time = query.time;
+    const ownerId = query.ownerId;
+    const where = { deletedAt: null };
+    if (ownerId && role === 'OWNER') {
+        where.place = { ownerUserId: ownerId };
+    }
+    else {
+        where.place = { status: "PUBLISHED" };
+    }
     if (cityId)
         where.place = { ...where.place, cityId };
+    if (categoryId)
+        where.categoryId = categoryId;
     const events = await prisma_1.prisma.event.findMany({
         where,
         include: { recurrence: true, specialDates: true, category: true, place: { include: { city: true } } },
@@ -229,7 +323,7 @@ const listAgenda = async (query) => {
         skip,
         take,
     });
-    const filtered = filterEventsByDate(events, date, weekday);
+    const filtered = filterEventsByDate(events, date, weekday, time);
     return { page, pageSize, total: filtered.length, items: filtered };
 };
 exports.listAgenda = listAgenda;

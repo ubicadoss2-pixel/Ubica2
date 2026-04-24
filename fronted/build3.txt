@@ -1,0 +1,63 @@
+[33m❯[39m Building...
+[32m✔[39m Building...
+Application bundle generation failed. [4.062 seconds] - 2026-03-27T20:21:40.087Z
+
+[1m[33m[33m▲ [43;33m[[43;30mWARNING[43;33m][0m [1mNG8107: The left side of this optional chain operation does not include 'null' or 'undefined' in its type, therefore the '?.' operator can be replaced with the '.' operator.[0m [1m[35m[plugin angular-compiler][0m
+
+    src/app/features/profile/profile.component.html:210:41:
+[37m      210 │                 <span>⭐ {{ place._count[32m?.favorit[37mes || 0 }}</span>
+          ╵                                        [32m~~~~~~~~~[0m
+
+  Warning occurs in the template of component ProfileComponent.
+
+    src/app/features/profile/profile.component.ts:14:15:
+[37m      14 │   templateUrl: [32m'./profile.component.html'[37m,
+         ╵                [32m~~~~~~~~~~~~~~~~~~~~~~~~~~[0m
+
+
+[33m▲ [43;33m[[43;30mWARNING[43;33m][0m [1mNG8107: The left side of this optional chain operation does not include 'null' or 'undefined' in its type, therefore the '?.' operator can be replaced with the '.' operator.[0m [1m[35m[plugin angular-compiler][0m
+
+    src/app/features/profile/profile.component.html:211:42:
+[37m      211 │                 <span>💬 {{ place._count[32m?.commen[37mts || 0 }}</span>
+          ╵                                        [32m~~~~~~~~[0m
+
+  Warning occurs in the template of component ProfileComponent.
+
+    src/app/features/profile/profile.component.ts:14:15:
+[37m      14 │   templateUrl: [32m'./profile.component.html'[37m,
+         ╵                [32m~~~~~~~~~~~~~~~~~~~~~~~~~~[0m
+
+
+[33m▲ [43;33m[[43;30mWARNING[43;33m][0m [1mNG8107: The left side of this optional chain operation does not include 'null' or 'undefined' in its type, therefore the '?.' operator can be replaced with the '.' operator.[0m [1m[35m[plugin angular-compiler][0m
+
+    src/app/features/profile/profile.component.html:220:59:
+[37m      220 │             <div class="place-events" *ngIf="place.events?.[32mlength[37m">
+          ╵                                                            [32m~~~~~~[0m
+
+  Warning occurs in the template of component ProfileComponent.
+
+    src/app/features/profile/profile.component.ts:14:15:
+[37m      14 │   templateUrl: [32m'./profile.component.html'[37m,
+         ╵                [32m~~~~~~~~~~~~~~~~~~~~~~~~~~[0m
+
+
+[33m▲ [43;33m[[43;30mWARNING[43;33m][0m [1mNG8113: RouterLink is not used within the template of SettingsComponent[0m [1m[35m[plugin angular-compiler][0m
+
+    src/app/features/settings/settings.component.ts:12:39:
+[37m      12 │   imports: [CommonModule, FormsModule, [32mRouterLink[37m, TranslatePipe],
+         ╵                                        [32m~~~~~~~~~~[0m
+
+[39m[22m
+[1m[31m[31mX [41;31m[[41;97mERROR[41;31m][0m [1mTS2339: Property 'photos' does not exist on type '{ id: string; name: string; status: string; city: { name: string; }; events: { id: string; title: string; status: string; }[]; _count: { favorites: number; comments: number; }; }'.[0m [1m[35m[plugin angular-compiler][0m
+
+    src/app/features/profile/profile.component.html:198:33:
+[37m      198 │ ...         <svg *ngIf="!place.[32mphotos[37m?.length" width="24" height=...
+          ╵                                [32m~~~~~~[0m
+
+  Error occurs in the template of component ProfileComponent.
+
+    src/app/features/profile/profile.component.ts:14:15:
+[37m      14 │   templateUrl: [32m'./profile.component.html'[37m,
+         ╵                [32m~~~~~~~~~~~~~~~~~~~~~~~~~~[0m
+
+[39m[22m

@@ -55,22 +55,43 @@ export const getConversationMessages = async (
   conversationId: string,
   limit = 50
 ) => {
-  return prisma.chatMessage.findMany({
+  const messages = await prisma.chatMessage.findMany({
     where: { conversationId },
-    orderBy: { createdAt: "asc" },
+    orderBy: { createdAt: "desc" }, // Tomar los más recientes primero
     take: limit,
   });
+  return messages.reverse(); // Invertir para darlos en orden cronológico a la IA
 };
 
 export const callAI = async (messages: { role: string; content: string }[]) => {
   const apiKey = process.env.AI_API_KEY;
   console.log("AI_API_KEY:", apiKey ? "SET" : "NOT SET");
 
+  // Check for image attachments in messages - GPT-3.5 doesn't support images
+  const userMessages = messages.filter(m => m.role === 'user');
+  const hasImage = userMessages.some(m => 
+    m.content.toLowerCase().includes('.png') || 
+    m.content.toLowerCase().includes('.jpg') ||
+    m.content.toLowerCase().includes('.jpeg') ||
+    m.content.toLowerCase().includes('.gif') ||
+    m.content.toLowerCase().includes('image') ||
+    m.content.toLowerCase().includes('foto') ||
+    m.content.toLowerCase().includes('imagen')
+  );
+
+  if (hasImage) {
+    return "Lo siento, por ahora solo puedo ayudarte con texto. No puedo procesar imágenes. ¿En qué puedo ayudarte sobre Ubica2?";
+  }
+
   if (!apiKey) {
     return "Lo siento, el servicio de IA no esta configurado. Por favor contacta al administrador.";
   }
 
   try {
+    // Protección contra conexiones colgadas
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 15000); // 15s de límite
+
     const response = await fetch(process.env.AI_API_URL || "https://api.openai.com/v1/chat/completions", {
       method: "POST",
       headers: {
@@ -83,7 +104,10 @@ export const callAI = async (messages: { role: string; content: string }[]) => {
         max_tokens: 500,
         temperature: 0.7,
       }),
+      signal: controller.signal as RequestInit["signal"],
     });
+
+    clearTimeout(timeoutId);
 
     if (!response.ok) {
       throw new Error(`AI API error: ${response.status}`);
@@ -173,13 +197,14 @@ export const deleteConversation = async (userId: string, conversationId: string)
     throw new Error("Conversacion no encontrada");
   }
 
-  await prisma.chatMessage.deleteMany({
-    where: { conversationId },
-  });
-
-  await prisma.chatConversation.delete({
-    where: { id: conversationId },
-  });
+  await prisma.$transaction([
+    prisma.chatMessage.deleteMany({
+      where: { conversationId },
+    }),
+    prisma.chatConversation.delete({
+      where: { id: conversationId },
+    })
+  ]);
 
   return { deleted: true };
 };

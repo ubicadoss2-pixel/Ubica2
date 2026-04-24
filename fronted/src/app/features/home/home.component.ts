@@ -2,8 +2,6 @@ import { CommonModule } from '@angular/common';
 import { Component, effect, inject, signal, OnInit } from '@angular/core';
 import { FormBuilder, ReactiveFormsModule } from '@angular/forms';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
-import { Subject } from 'rxjs';
-import { switchMap, tap } from 'rxjs/operators';
 import { finalize } from 'rxjs/operators';
 import { City, Place } from '../../core/models/api.models';
 import { AnalyticsService } from '../../core/services/analytics.service';
@@ -12,13 +10,14 @@ import { CatalogsService } from '../../core/services/catalogs.service';
 import { FavoritesService } from '../../core/services/favorites.service';
 import { PlacesService } from '../../core/services/places.service';
 import { AppStateService } from '../../core/services/app-state.service';
+import { TranslatePipe } from '../../core/pipes/translate.pipe';
 import * as L from 'leaflet';
 import 'leaflet-routing-machine';
 
 @Component({
   selector: 'app-home',
   standalone: true,
-  imports: [CommonModule, ReactiveFormsModule, RouterLink],
+  imports: [CommonModule, ReactiveFormsModule, RouterLink, TranslatePipe],
   templateUrl: './home.component.html',
   styleUrl: './home.component.scss',
 })
@@ -58,7 +57,20 @@ export class HomeComponent implements OnInit {
   private searchMarker?: L.Marker;
   private readonly router = inject(Router);
   private readonly route = inject(ActivatedRoute);
-  private refreshTrigger = new Subject<void>();
+
+  private readonly placesEffect = effect(() => {
+    const current = this.places();
+    console.log(`[EFFECT] Places updated, count: ${current.length}`);
+    if (current.length > 0 && this.map && this.markersLayer) {
+      this.updateMarkers();
+    }
+  });
+
+  private readonly refreshEffect = effect(() => {
+    const _ = this.appState.refreshPlaces$;
+    console.log('[DEBUG] Places refresh triggered via AppState');
+    this.loadPlaces();
+  });
 
   ngOnInit(): void {
     this.loadCatalogs();
@@ -67,31 +79,12 @@ export class HomeComponent implements OnInit {
       this.loadFavorites();
     }
 
-    // Reactively update markers when places signal changes
-    effect(() => {
-      const current = this.places();
-      console.log(`[EFFECT] Places updated, count: ${current.length}`);
-      if (current.length > 0) {
-        this.updateMarkers();
-        this.checkQueryParams();
-      }
-    });
+    this.checkQueryParams();
 
-    // Listen for app state changes to reload data
-    effect(() => {
-      this.appState.refreshPlaces();
-      console.log('[APP STATE] Refreshing data...');
-      this.loadCatalogs();
-      this.loadPlaces();
-      if (this.authStore.hasRole('USER')) {
-        this.loadFavorites();
-      }
-    });
-
-    // Listen for route changes to reload data
     this.router.events.subscribe(() => {
       this.loadPlaces();
       this.loadFavorites();
+      this.checkQueryParams();
     });
   }
 
@@ -139,15 +132,26 @@ export class HomeComponent implements OnInit {
     // Default center in Armenia, Colombia
     const defaultCenter: L.LatLngExpression = [4.5401, -75.6657];
     
+    const satellite = L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', {
+      attribution: 'Tiles &copy; Esri &mdash; Source: Esri, i-cubed, USDA, USGS, AEX, GeoEye, Getmapping, Aerogrid, IGN, IGP, UPR-EGP, and the GIS User Community'
+    });
+
+    const streets = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+      attribution: '&copy; OpenStreetMap contributors'
+    });
+
     this.map = L.map('map', {
       center: defaultCenter,
       zoom: 13,
-      zoomControl: true,
+      layers: [satellite]
     });
 
-    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-      attribution: '&copy; OpenStreetMap contributors'
-    }).addTo(this.map);
+    const baseMaps = {
+      "Satélite (Earth)": satellite,
+      "Calles": streets
+    };
+
+    L.control.layers(baseMaps).addTo(this.map);
 
     setTimeout(() => {
       this.map?.invalidateSize();
@@ -240,16 +244,6 @@ export class HomeComponent implements OnInit {
         photoMarker.bindPopup(popupContent);
         this.markersLayer!.addLayer(photoMarker);
         markers.push(photoMarker);
-
-        // 2. Simple Circle Marker as fallback (always visible)
-        const circle = L.circleMarker([pLat, pLng], {
-          radius: 8,
-          fillColor: "#ff7800",
-          color: "#000",
-          weight: 1,
-          opacity: 1,
-          fillOpacity: 0.8
-        }).addTo(this.markersLayer!);
         
         console.log(`[DEBUG_MARKER] Added markers for ${place.name}`);
       } else {

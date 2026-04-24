@@ -147,14 +147,22 @@ export class PlansSuccessComponent implements OnInit {
     }
 
     this.plansService.subscribe(planId).subscribe({
-      next: () => {
+      next: (response: any) => {
+        const newRole = response?.role;
+        if (newRole) {
+          const currentUser = this.auth.user();
+          if (currentUser) {
+            this.auth.setUser({ ...currentUser, role: newRole });
+          }
+        }
+        
         // Refresh session to get NEW role from DB
         this.auth.refreshSession().subscribe({
           next: () => {
             this.status.set('done');
             setTimeout(() => this.router.navigate(['/owner/place/new']), 1500);
           },
-          error: () => this.status.set('done') // Finalize anyway
+          error: () => this.status.set('done')
         });
       },
       error: (err) => {

@@ -1,81 +1,227 @@
-<section>
-  <h1>Panel administrativo</h1>
-  <p class="subtitle">Moderación, reportes y métricas operativas.</p>
-</section>
+<div class="admin-container">
+  <header class="admin-header">
+    <div class="header-info">
+      <h1>Panel Maestro</h1>
+      <p class="subtitle">Gestión centralizada de Ubica2 · Modo Administrador</p>
+    </div>
+    
+    <nav class="admin-tabs">
+      <button (click)="setTab('dashboard')" [class.active]="activeTab() === 'dashboard'">
+        <span class="icon">📊</span> Resumen
+      </button>
+      <button (click)="setTab('users')" [class.active]="activeTab() === 'users'">
+        <span class="icon">👥</span> Usuarios
+      </button>
+      <button (click)="setTab('verifications')" [class.active]="activeTab() === 'verifications'">
+        <span class="icon">🛡️</span> Verificaciones
+      </button>
+      <button (click)="setTab('reports')" [class.active]="activeTab() === 'reports'">
+        <span class="icon">🚩</span> Reportes
+      </button>
+      <button (click)="setTab('audit')" [class.active]="activeTab() === 'audit'">
+        <span class="icon">📜</span> Auditoría
+      </button>
+    </nav>
+  </header>
 
-<p class="error" *ngIf="error()">{{ error() }}</p>
-<p class="info" *ngIf="info()">{{ info() }}</p>
+  <div class="admin-content">
+    <div class="alert-box error" *ngIf="error()">{{ error() }}</div>
+    <div class="alert-box info" *ngIf="info()">{{ info() }}</div>
 
-<section class="cards-grid">
-  <article class="card" *ngIf="summary() as summary">
-    <h2>Analytics Summary</h2>
-    <p>Total eventos: <strong>{{ summary.totalEvents }}</strong></p>
-    <ul>
-      <li *ngFor="let item of summary.byType">{{ item.eventType }}: {{ item.total }}</li>
-    </ul>
-  </article>
+    <!-- TAB: DASHBOARD -->
+    <div class="tab-view" *ngIf="activeTab() === 'dashboard'">
+      <div class="stats-grid">
+        <article class="stat-card">
+          <div class="stat-header">
+            <span class="stat-icon pink">📈</span>
+            <h3>Actividad Total</h3>
+          </div>
+          <div class="stat-body" *ngIf="summary() as s">
+            <span class="big-number">{{ s.totalEvents }}</span>
+            <p>Interacciones registradas</p>
+          </div>
+        </article>
 
-  <article class="card">
-    <h2>Moderación rápida</h2>
-    <form [formGroup]="moderationForm" (ngSubmit)="applyModeration()">
-      <input formControlName="placeId" placeholder="Place ID" />
-      <select formControlName="placeStatus">
-        <option value="DRAFT">DRAFT</option>
-        <option value="PUBLISHED">PUBLISHED</option>
-        <option value="SUSPENDED">SUSPENDED</option>
-      </select>
+        <article class="stat-card">
+          <div class="stat-header">
+            <span class="stat-icon blue">🏠</span>
+            <h3>Moderación Rápida</h3>
+          </div>
+          <form [formGroup]="moderationForm" (ngSubmit)="applyModeration()" class="quick-mod-form">
+            <div class="form-group">
+              <label>Lugar (ID)</label>
+              <input formControlName="placeId" placeholder="ID del lugar" />
+              <select formControlName="placeStatus">
+                <option value="DRAFT">Borrador</option>
+                <option value="PUBLISHED">Publicado</option>
+                <option value="SUSPENDED">Suspendido</option>
+              </select>
+            </div>
+            <button type="submit" class="btn-action">Guardar Cambios</button>
+          </form>
+        </article>
+      </div>
 
-      <input formControlName="eventId" placeholder="Event ID" />
-      <select formControlName="eventStatus">
-        <option value="ACTIVE">ACTIVE</option>
-        <option value="CANCELLED">CANCELLED</option>
-        <option value="SUSPENDED">SUSPENDED</option>
-      </select>
+      <div class="recent-audit card glass">
+        <h3>Últimos Movimientos</h3>
+        <ul class="audit-list-mini">
+          <li *ngFor="let item of audit() | slice:0:5">
+            <span class="time">{{ item.createdAt | date:'HH:mm' }}</span>
+            <span class="action">{{ item.action }}</span>
+            <span class="target">{{ item.entityType }}</span>
+          </li>
+        </ul>
+      </div>
+    </div>
 
-      <button type="submit">Aplicar cambios</button>
-    </form>
-  </article>
-</section>
+    <!-- TAB: USERS -->
+    <div class="tab-view" *ngIf="activeTab() === 'users'">
+      <div class="card glass">
+        <div class="view-header">
+          <h3>Gestión de Usuarios</h3>
+          <div class="view-actions">
+            <input type="text" placeholder="Buscar por email..." (input)="onFilterEvent($event, 'search')" class="search-input" />
+          </div>
+        </div>
+        
+        <div class="table-container">
+          <table>
+            <thead>
+              <tr>
+                <th>Nombre</th>
+                <th>Email</th>
+                <th>Rol</th>
+                <th>Acciones</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr *ngFor="let user of usersPage().items">
+                <td class="user-cell">
+                  <div class="user-avatar">{{ user.fullName?.charAt(0) || 'U' }}</div>
+                  <span>{{ user.fullName || 'Sin nombre' }}</span>
+                </td>
+                <td>{{ user.email }}</td>
+                <td>
+                  <span class="role-pill" [class]="(user.userRoles?.[0]?.role?.code || 'USER').toLowerCase()">
+                    {{ user.userRoles?.[0]?.role?.code || 'USER' }}
+                  </span>
+                </td>
+                <td>
+                  <div class="action-cell">
+                    <select #roleSelect [value]="user.userRoles?.[0]?.role?.code || 'USER'">
+                      <option value="USER">Usuario</option>
+                      <option value="OWNER">Propietario</option>
+                      <option value="ADMIN">Admin</option>
+                    </select>
+                    <button class="btn-save" (click)="updateUserRole(user.id, roleSelect.value)">Actualizar</button>
+                  </div>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
 
-<section class="card block">
-  <h2>Reportes</h2>
-  <div class="table-wrap">
-    <table>
-      <thead>
-        <tr>
-          <th>ID</th>
-          <th>Tipo</th>
-          <th>Razón</th>
-          <th>Estado</th>
-          <th>Acción</th>
-        </tr>
-      </thead>
-      <tbody>
-        <tr *ngFor="let report of reports()">
-          <td>{{ report.id }}</td>
-          <td>{{ report.targetType }}</td>
-          <td>{{ report.reason }}</td>
-          <td>{{ report.status }}</td>
-          <td>
-            <select #statusSelect [value]="report.status">
-              <option value="OPEN">OPEN</option>
-              <option value="IN_REVIEW">IN_REVIEW</option>
-              <option value="RESOLVED">RESOLVED</option>
-              <option value="REJECTED">REJECTED</option>
-            </select>
-            <button type="button" (click)="updateReportFromValue(report.id, statusSelect.value)">Guardar</button>
-          </td>
-        </tr>
-      </tbody>
-    </table>
+    <!-- TAB: VERIFICATIONS -->
+    <div class="tab-view" *ngIf="activeTab() === 'verifications'">
+      <div class="card glass">
+        <div class="view-header">
+          <h3>Verificaciones de Identidad</h3>
+        </div>
+        
+        <div class="table-container">
+          <table>
+            <thead>
+              <tr>
+                <th>Usuario</th>
+                <th>Documento</th>
+                <th>Estado</th>
+                <th>Acciones</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr *ngFor="let v of verifications()">
+                <td>
+                  <strong>{{ v.fullName }}</strong><br>
+                  <small>{{ v.user?.email }}</small>
+                </td>
+                <td>
+                  <span class="doc-info">{{ v.documentType }}: {{ v.documentNumber }}</span><br>
+                  <a [href]="'http://localhost:3000' + v.fileUrl" target="_blank" class="link-doc">📂 Ver Archivo</a>
+                </td>
+                <td>
+                  <span class="status-badge" [class]="v.status.toLowerCase()">{{ v.status }}</span>
+                </td>
+                <td>
+                  <div class="btn-group" *ngIf="v.status === 'PENDING'">
+                    <button (click)="verify(v.id, 'APPROVED')" class="btn-approve">Aprobar</button>
+                    <button (click)="verify(v.id, 'REJECTED')" class="btn-reject">Rechazar</button>
+                  </div>
+                  <span class="status-done" *ngIf="v.status !== 'PENDING'">✅ Completado</span>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+          <div class="empty-state" *ngIf="verifications().length === 0">
+            <span class="icon">🔍</span>
+            <p>No hay solicitudes pendientes.</p>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- TAB: REPORTS -->
+    <div class="tab-view" *ngIf="activeTab() === 'reports'">
+      <div class="card glass">
+        <h3>Reportes y Denuncias</h3>
+        <div class="table-container">
+          <table>
+            <thead>
+              <tr>
+                <th>Origen</th>
+                <th>Motivo</th>
+                <th>Estado</th>
+                <th>Gestión</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr *ngFor="let report of reports()">
+                <td>{{ report.targetType }}</td>
+                <td><p class="reason-text">{{ report.reason }}</p></td>
+                <td><span class="status-badge" [class]="report.status.toLowerCase()">{{ report.status }}</span></td>
+                <td>
+                  <div class="action-cell">
+                    <select #statusSelect [value]="report.status">
+                      <option value="OPEN">Abierto</option>
+                      <option value="IN_REVIEW">En Revisión</option>
+                      <option value="RESOLVED">Resuelto</option>
+                      <option value="REJECTED">Rechazado</option>
+                    </select>
+                    <button class="btn-save" (click)="updateReportFromValue(report.id, statusSelect.value)">OK</button>
+                  </div>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- TAB: AUDIT -->
+    <div class="tab-view" *ngIf="activeTab() === 'audit'">
+      <div class="card glass">
+        <h3>Historial de Auditoría</h3>
+        <div class="audit-timeline">
+          <div class="audit-item" *ngFor="let item of audit()">
+            <div class="audit-date">{{ item.createdAt | date: 'medium' }}</div>
+            <div class="audit-desc">
+              <span class="audit-action">{{ item.action }}</span> en 
+              <span class="audit-entity">{{ item.entityType }}</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
   </div>
-</section>
-
-<section class="card block">
-  <h2>Auditoría</h2>
-  <ul>
-    <li *ngFor="let item of audit()">
-      {{ item.createdAt | date: 'short' }} · {{ item.entityType }} · {{ item.action }}
-    </li>
-  </ul>
-</section>
+</div>

@@ -9,7 +9,9 @@ import { HomeComponent } from './features/home/home.component';
 import { EventCreateComponent } from './features/owner/event-create/event-create.component';
 import { PlaceCreateComponent } from './features/owner/place-create/place-create.component';
 import { PlaceEditComponent } from './features/owner/place-edit/place-edit.component';
+import { PlaceListComponent } from './features/owner/place-list/place-list.component';
 import { EventEditComponent } from './features/owner/event-edit/event-edit.component';
+import { EventListComponent } from './features/owner/event-list/event-list.component';
 import { PlaceDetailComponent } from './features/place-detail/place-detail.component';
 import { PlansComponent } from './features/plans/plans.component';
 import { PlansSuccessComponent } from './features/plans/plans-success.component';
@@ -18,6 +20,8 @@ import { ChatbotComponent } from './features/chatbot/chatbot.component';
 import { authGuard, roleGuard } from './core/guards/auth.guard';
 import { ProfileComponent } from './features/profile/profile.component';
 import { ShellComponent } from './shared/layout/shell.component';
+import { SettingsComponent } from './features/settings/settings.component';
+import { VerificationComponent } from './features/verification/verification.component';
 
 export const routes: Routes = [
   {
@@ -31,12 +35,16 @@ export const routes: Routes = [
       { path: 'register', component: RegisterComponent },
       { path: 'forgot-password', component: ForgotPasswordComponent },
       { path: 'plans', component: PlansComponent },
+      { path: 'settings', component: SettingsComponent, canActivate: [authGuard] },
+      { path: 'verificacion', component: VerificationComponent, canActivate: [authGuard] },
       { path: 'promotions', component: PromotionsComponent },
       { path: 'chatbot', component: ChatbotComponent, canActivate: [authGuard] },
       { path: 'plans/success', component: PlansSuccessComponent, canActivate: [authGuard] },
       { path: 'favorites', component: FavoritesComponent, canActivate: [authGuard] },
+      { path: 'owner/places', component: PlaceListComponent, canActivate: [roleGuard('OWNER', 'ADMIN')] },
       { path: 'owner/place/new', component: PlaceCreateComponent, canActivate: [roleGuard('OWNER', 'ADMIN')] },
       { path: 'owner/place/edit/:id', component: PlaceEditComponent, canActivate: [roleGuard('OWNER', 'ADMIN')] },
+      { path: 'owner/events', component: EventListComponent, canActivate: [roleGuard('OWNER', 'ADMIN')] },
       { path: 'owner/event/new', component: EventCreateComponent, canActivate: [roleGuard('OWNER', 'ADMIN')] },
       { path: 'owner/event/edit/:id', component: EventEditComponent, canActivate: [roleGuard('OWNER', 'ADMIN')] },
       { path: 'profile', component: ProfileComponent, canActivate: [authGuard] },

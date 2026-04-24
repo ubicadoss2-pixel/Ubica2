@@ -6,7 +6,7 @@ const prisma = new PrismaClient();
 async function main() {
   console.log("Seeding Ubica2...");
 
-  const password = await bcrypt.hash("123456", 10);
+  const password = await bcrypt.hash("12345678", 10);
 
   const [adminRole, ownerRole, userRole] = await Promise.all([
     prisma.role.upsert({

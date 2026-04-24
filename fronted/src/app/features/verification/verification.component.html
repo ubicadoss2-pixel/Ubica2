@@ -1,0 +1,88 @@
+<section class="auth-wrapper">
+  <div class="auth-card pastel-theme">
+    <div class="brand">
+      <span class="logo-dot"></span>
+      <h1>Verificación de Identidad</h1>
+    </div>
+    
+    <!-- Status Display -->
+    <div class="status-box" *ngIf="currentStatus() as status">
+      <div class="alert" [ngClass]="{
+        'pending-alert': status.status === 'PENDING',
+        'success-alert': status.status === 'APPROVED',
+        'error-alert': status.status === 'REJECTED'
+      }">
+        <span class="icon">
+          <ng-container [ngSwitch]="status.status">
+            <span *ngSwitchCase="'PENDING'">⏳</span>
+            <span *ngSwitchCase="'APPROVED'">✅</span>
+            <span *ngSwitchCase="'REJECTED'">❌</span>
+          </ng-container>
+        </span>
+        <div class="status-text">
+          <strong>Estado: 
+            <span *ngIf="status.status === 'PENDING'">Pendiente</span>
+            <span *ngIf="status.status === 'APPROVED'">Aprobado</span>
+            <span *ngIf="status.status === 'REJECTED'">Rechazado</span>
+          </strong>
+          <p *ngIf="status.status === 'PENDING'">Tu solicitud está siendo revisada por el equipo administratifvo.</p>
+          <p *ngIf="status.status === 'APPROVED'">¡Felicidades! Tu cuenta ha sido verificada correctamente.</p>
+          <p *ngIf="status.status === 'REJECTED'">Tu solicitud fue rechazada. Por favor intenta de nuevo con datos válidos.</p>
+        </div>
+      </div>
+    </div>
+
+    <p class="subtitle" *ngIf="!currentStatus() || currentStatus()?.status === 'REJECTED'">
+      Sube tu documento de identidad para validar tu cuenta como comercio u organizador.
+    </p>
+
+    <div class="alert success-alert" *ngIf="successMessage()">
+      <span class="icon">✨</span> {{ successMessage() }}
+    </div>
+
+    <!-- Form only if not pending or approved (or allow re-submit if rejected) -->
+    <form [formGroup]="form" (ngSubmit)="submit()" *ngIf="!currentStatus() || currentStatus()?.status === 'REJECTED'">
+      <div class="input-group">
+        <label for="fullName">Nombre Completo</label>
+        <div class="input-wrapper" [class.has-error]="isFieldInvalid('fullName')">
+          <input id="fullName" type="text" formControlName="fullName" placeholder="Ej: Juan Pérez" />
+        </div>
+      </div>
+
+      <div class="input-group">
+        <label for="documentType">Tipo de Documento</label>
+        <div class="input-wrapper" [class.has-error]="isFieldInvalid('documentType')">
+          <select id="documentType" formControlName="documentType">
+            <option value="CC">Cédula de Ciudadanía (CC)</option>
+            <option value="CE">Cédula de Extranjería (CE)</option>
+            <option value="NIT">NIT Empresarial</option>
+            <option value="PASSPORT">Pasaporte</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="input-group">
+        <label for="documentNumber">Número de Documento</label>
+        <div class="input-wrapper" [class.has-error]="isFieldInvalid('documentNumber')">
+          <input id="documentNumber" type="text" formControlName="documentNumber" placeholder="123456789" />
+        </div>
+      </div>
+
+      <div class="input-group">
+        <label for="documentFile">Archivo de Identidad (JPG, PNG o PDF)</label>
+        <div class="input-wrapper file-wrapper">
+          <input id="documentFile" type="file" (change)="onFileSelected($event)" accept=".pdf,image/png,image/jpeg" />
+        </div>
+      </div>
+
+      <div class="alert error-alert" *ngIf="error()">
+        <span class="icon">⚠️</span> {{ error() }}
+      </div>
+
+      <button type="submit" [disabled]="loading()" class="btn-primary">
+        <span class="spinner" *ngIf="loading()"></span>
+        {{ loading() ? 'Enviando...' : 'Enviar Solicitud' }}
+      </button>
+    </form>
+  </div>
+</section>

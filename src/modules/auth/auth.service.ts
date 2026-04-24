@@ -91,6 +91,12 @@ export const loginUser = async (data: LoginDTO) => {
   };
 
   return {
+    user: {
+      id: user.id,
+      email: user.email,
+      fullName: user.fullName,
+      role: roleCode,
+    },
     accessToken: generateAccessToken(payload),
     refreshToken: generateRefreshToken(payload),
   };
@@ -176,15 +182,16 @@ export const resetPassword = async (data: ResetPasswordDTO) => {
 
   const hashed = await hashPassword(data.password);
 
-  await prisma.user.update({
-    where: { id: resetToken.userId },
-    data: { passwordHash: hashed },
-  });
-
-  await prisma.passwordResetToken.update({
-    where: { id: resetToken.id },
-    data: { usedAt: new Date() },
-  });
+  await prisma.$transaction([
+    prisma.user.update({
+      where: { id: resetToken.userId },
+      data: { passwordHash: hashed },
+    }),
+    prisma.passwordResetToken.update({
+      where: { id: resetToken.id },
+      data: { usedAt: new Date() },
+    })
+  ]);
 
   return { message: "Contraseña actualizada exitosamente" };
 };

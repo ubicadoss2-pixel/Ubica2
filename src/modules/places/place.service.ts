@@ -143,6 +143,58 @@ export const updatePlace = async (
     };
   }
 
+  if (data.contacts) {
+    updates.contacts = {
+      deleteMany: {},
+      create: data.contacts,
+    };
+  }
+
+  if (data.socialLinks) {
+    updates.socialLinks = {
+      deleteMany: {},
+      create: data.socialLinks,
+    };
+  }
+
+  if (data.openingHours) {
+    updates.openingHours = {
+      deleteMany: {},
+      create: data.openingHours.map((h: any) => ({
+        weekday: h.weekday,
+        openTime: h.openTime ? toTime(h.openTime) : null,
+        closeTime: h.closeTime ? toTime(h.closeTime) : null,
+        isClosed: h.isClosed ?? false,
+      })),
+    };
+  }
+
+  if (data.contacts) {
+    updates.contacts = {
+      deleteMany: {},
+      create: data.contacts,
+    };
+  }
+
+  if (data.socialLinks) {
+    updates.socialLinks = {
+      deleteMany: {},
+      create: data.socialLinks,
+    };
+  }
+
+  if (data.openingHours) {
+    updates.openingHours = {
+      deleteMany: {},
+      create: data.openingHours.map((h: any) => ({
+        weekday: h.weekday,
+        openTime: h.openTime ? toTime(h.openTime) : null,
+        closeTime: h.closeTime ? toTime(h.closeTime) : null,
+        isClosed: h.isClosed ?? false,
+      })),
+    };
+  }
+
   // Remove individual fields already mapped to complex prisma objects
   delete updates.photos_list; // If any
   
@@ -186,6 +238,7 @@ export const listPlaces = async (query: any, userId?: string, role?: string) => 
   const status = query.status as string | undefined;
   const search = query.search as string | undefined;
   const priceLevel = query.priceLevel ? Number(query.priceLevel) : undefined;
+  const ownerId = query.ownerId as string | undefined;
 
   const where: any = {
     deletedAt: null,
@@ -195,6 +248,7 @@ export const listPlaces = async (query: any, userId?: string, role?: string) => 
   if (placeTypeId) where.placeTypeId = placeTypeId;
   if (priceLevel) where.priceLevel = priceLevel;
   if (search) where.name = { contains: search }; // Removed mode: 'insensitive' to fix Prisma MySQL/SQLite bug
+  if (ownerId) where.ownerUserId = ownerId;
 
   if (!role || (role !== "ADMIN" && role !== "OWNER")) {
     where.status = "PUBLISHED";

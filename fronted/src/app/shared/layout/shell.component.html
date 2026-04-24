@@ -1,26 +1,40 @@
 <div class="shell-bg"></div>
-<header class="topbar">
-  <a routerLink="/" class="brand">Ubica2 Pro</a>
+<header class="topbar-shell">
+  <div class="shell-content">
+    <a routerLink="/" class="brand-logo">
+      <span class="logo-dot"></span>
+      Ubica2
+    </a>
 
-  <nav class="nav-links">
-    <a routerLink="/" routerLinkActive="active" [routerLinkActiveOptions]="{ exact: true }">Explorar</a>
-    <a routerLink="/agenda" routerLinkActive="active">Agenda</a>
-    <a *ngIf="authStore.isAuthenticated()" routerLink="/favorites" routerLinkActive="active">Favoritos</a>
-    <a *ngIf="!authStore.hasRole('OWNER', 'ADMIN')" routerLink="/plans" routerLinkActive="active" class="nav-plans">⭐ Planes</a>
-    <a routerLink="/promotions" routerLinkActive="active">🔥 Promos</a>
-    <a *ngIf="authStore.isAuthenticated()" routerLink="/profile" routerLinkActive="active">Mi Perfil</a>
-    <a *ngIf="authStore.hasRole('OWNER', 'ADMIN')" routerLink="/owner/place/new" routerLinkActive="active">Crear Lugar</a>
-    <a *ngIf="authStore.hasRole('OWNER', 'ADMIN')" routerLink="/owner/event/new" routerLinkActive="active">Crear Evento</a>
-    <a *ngIf="authStore.hasRole('ADMIN')" routerLink="/admin" routerLinkActive="active">Admin</a>
-  </nav>
+    <nav class="nav-capsule">
+      <a routerLink="/" routerLinkActive="active" [routerLinkActiveOptions]="{ exact: true }">
+        <span class="nav-icon">🌍</span> {{ 'Explorar' | translate }}
+      </a>
+      <a routerLink="/agenda" routerLinkActive="active">{{ 'Eventos' | translate }}</a>
+      <a *ngIf="authStore.isAuthenticated()" routerLink="/favorites" routerLinkActive="active">{{ 'Favoritos' | translate }}</a>
+      <a routerLink="/promotions" routerLinkActive="active" class="nav-promo">{{ 'Ofertas' | translate }}</a>
+      <a routerLink="/plans" routerLinkActive="active" class="nav-plans">{{ 'Planes' | translate }}</a>
+      <a *ngIf="authStore.isAuthenticated()" routerLink="/profile" routerLinkActive="active" class="nav-profile">{{ 'Mi Perfil' | translate }}</a>
+      <a *ngIf="authStore.isAuthenticated() && !authStore.isOwner()" routerLink="/verificacion" routerLinkActive="active" class="nav-verify">Verificación</a>
+      <a *ngIf="authStore.isOwner()" routerLink="/owner/places" routerLinkActive="active" class="nav-owner">{{ 'Mis Lugares' | translate }}</a>
+      <a *ngIf="authStore.isOwner()" routerLink="/owner/events" routerLinkActive="active" class="nav-owner">{{ 'Mis Eventos' | translate }}</a>
+      <a *ngIf="authStore.isAdmin()" routerLink="/admin" routerLinkActive="active" class="nav-admin">Admin</a>
+    </nav>
 
-  <div class="auth-block">
-    <span *ngIf="authStore.user()" class="user-chip">{{ authStore.user()?.role }}</span>
-    <a *ngIf="!authStore.isAuthenticated()" routerLink="/login" class="btn ghost">Ingresar</a>
-    <a *ngIf="!authStore.isAuthenticated()" routerLink="/register" class="btn solid">Crear cuenta</a>
-    <button *ngIf="authStore.isAuthenticated()" (click)="logout()" class="btn ghost" type="button">
-      Salir
-    </button>
+    <div class="user-actions">
+      <div class="action-buttons" *ngIf="!authStore.isAuthenticated()">
+        <a routerLink="/login" class="btn-link">{{ 'Ingresar' | translate }}</a>
+        <a routerLink="/register" class="btn-primary-pill">{{ 'Empezar' | translate }}</a>
+      </div>
+      
+      <div class="user-menu" *ngIf="authStore.isAuthenticated()">
+        <a routerLink="/settings" class="btn-icon-circle" title="Ajustes">⚙️</a>
+        <button type="button" (click)="logout()" class="btn-logout" id="logoutBtn">
+          <span class="icon">🚪</span>
+          <span class="label">Cerrar sesión</span>
+        </button>
+      </div>
+    </div>
   </div>
 </header>
 

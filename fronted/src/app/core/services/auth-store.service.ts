@@ -18,7 +18,12 @@ export class AuthStoreService {
   readonly accessToken = this.accessTokenSignal.asReadonly();
   readonly refreshToken = this.refreshTokenSignal.asReadonly();
   readonly user = this.userSignal.asReadonly();
-  readonly isAuthenticated = computed(() => !!this.accessTokenSignal());
+  readonly isAuthenticated = computed(() => {
+    const token = this.accessTokenSignal();
+    return !!token && token.length > 10; // Token mínimo razonable para evitar "null" o basura
+  });
+  readonly isOwner = computed(() => this.hasRole('OWNER', 'ADMIN'));
+  readonly isAdmin = computed(() => this.hasRole('ADMIN'));
 
   constructor() {
     this.hydrateFromStorage();
@@ -31,6 +36,10 @@ export class AuthStoreService {
 
     localStorage.setItem(ACCESS_TOKEN_KEY, accessToken);
     localStorage.setItem(REFRESH_TOKEN_KEY, refreshToken);
+  }
+
+  setUser(user: JwtUser): void {
+    this.userSignal.set(user);
   }
 
   refreshSession() {

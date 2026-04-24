@@ -5,15 +5,19 @@
 
 .wizard-card {
   padding: 2rem;
-  background: white;
+  background: var(--surface-card);
   border-radius: 12px;
-  box-shadow: 0 4px 10px rgba(0,0,0,0.05);
+  box-shadow: var(--shadow-md);
+  border: 1px solid var(--border-quiet);
 }
 
 .wizard-header {
   margin-bottom: 2rem;
   text-align: center;
-  h2 { margin-top: 0; color: #333; }
+  h2 { 
+    margin-top: 0; 
+    color: var(--ink-primary); 
+  }
 }
 
 .step-indicator {
@@ -25,31 +29,55 @@
   span {
     padding: 0.5rem 1rem;
     border-radius: 20px;
-    background: #e2e8f0;
-    color: #64748b;
+    background: var(--surface-soft);
+    color: var(--text-secondary);
     font-weight: 600;
     font-size: 0.9rem;
     transition: all 0.3s;
-    &.active { background: #4f46e5; color: white; }
+    &.active { background: var(--identity-glow); color: white; }
   }
   .line {
-    height: 3px; width: 40px; background: #e2e8f0;
-    &.active { background: #4f46e5; }
+    height: 3px; width: 40px; background: var(--surface-soft);
+    &.active { background: var(--identity-glow); }
   }
 }
 
 .wizard-warnings {
-  background: #fef2f2; border-left: 4px solid #ef4444; padding: 1rem; margin-bottom: 1.5rem; border-radius: 4px;
-  .error-msg { margin: 0; color: #b91c1c; font-weight: 500; }
+  background: var(--error-bg); 
+  border-left: 4px solid var(--error-text); 
+  padding: 1rem; 
+  margin-bottom: 1.5rem; 
+  border-radius: 4px;
+  .error-msg { margin: 0; color: var(--error-text); font-weight: 500; }
 }
 
 .wizard-step {
   animation: fadeIn 0.4s;
-  h3 { color: #4f46e5; border-bottom: 2px solid #f1f5f9; padding-bottom: 0.5rem; margin-bottom: 1.5rem; }
-  label { display: block; margin: 1rem 0 0.5rem; font-weight: 500; color: #334155; }
+  h3 { 
+    color: var(--identity-glow); 
+    border-bottom: 2px solid var(--surface-soft); 
+    padding-bottom: 0.5rem; 
+    margin-bottom: 1.5rem; 
+  }
+  label { 
+    display: block; 
+    margin: 1rem 0 0.5rem; 
+    font-weight: 500; 
+    color: var(--text-primary); 
+  }
   input, select, textarea {
-    width: 100%; padding: 0.75rem; border: 1px solid #cbd5e1; border-radius: 6px; font-size: 1rem; transition: border-color 0.3s;
-    &:focus { border-color: #4f46e5; outline: none; }
+    width: 100%; 
+    padding: 0.75rem; 
+    border: 1px solid var(--border-color); 
+    border-radius: 6px; 
+    font-size: 1rem; 
+    transition: border-color 0.3s;
+    background: var(--bg-input);
+    color: var(--text-primary);
+    &:focus { 
+      border-color: var(--identity-glow); 
+      outline: none; 
+    }
   }
 }
 
@@ -60,17 +88,24 @@
 }
 
 .coords-row { margin-top: 10px; }
-.help-text { font-size: 0.8rem; color: #64748b; margin-top: 0.5rem; }
+.help-text { font-size: 0.8rem; color: var(--text-muted); margin-top: 0.5rem; }
 
 .media-section {
   margin-top: 2rem;
-  .plan-info { font-size: 0.85rem; color: #10b981; margin-bottom: 1rem; }
-  .badge { background: #e2e8f0; padding: 2px 8px; border-radius: 12px; font-size: 0.9rem; }
+  .plan-info { font-size: 0.85rem; color: var(--success-text); margin-bottom: 1rem; }
+  .badge { background: var(--surface-soft); padding: 2px 8px; border-radius: 12px; font-size: 0.9rem; }
 }
 
 .add-photo-bar {
   display: flex; gap: 10px; margin-bottom: 1.5rem;
-  input { flex: 1; }
+  input { 
+    flex: 1; 
+    padding: 0.75rem;
+    background: var(--bg-input);
+    border: 1px solid var(--border-color);
+    border-radius: 6px;
+    color: var(--text-primary);
+  }
 }
 
 .photos-preview-grid {
@@ -84,17 +119,17 @@
     }
   }
   .photo-placeholder {
-    height: 120px; border: 2px dashed #cbd5e1; border-radius: 8px; display: flex; align-items: center; justify-content: center; color: #94a3b8; grid-column: 1 / -1;
+    height: 120px; border: 2px dashed var(--border-color); border-radius: 8px; display: flex; align-items: center; justify-content: center; color: var(--text-muted); grid-column: 1 / -1;
   }
 }
 
 .wizard-footer {
-  display: flex; justify-content: space-between; margin-top: 2rem; padding-top: 1.5rem; border-top: 1px solid #f1f5f9;
+  display: flex; justify-content: space-between; margin-top: 2rem; padding-top: 1.5rem; border-top: 1px solid var(--border-quiet);
   .ml-auto { margin-left: auto; }
 }
 
 .success-banner {
-  margin-top: 1rem; padding: 1rem; background: #ecfdf5; color: #047857; border-radius: 6px; text-align: center; font-weight: 600;
+  margin-top: 1rem; padding: 1rem; background: var(--success-bg); color: var(--success-text); border-radius: 6px; text-align: center; font-weight: 600;
 }
 
 @keyframes fadeIn {

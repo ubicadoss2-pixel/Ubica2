@@ -45,9 +45,9 @@ export const listByPlace = async (req: Request, res: Response) => {
   }
 };
 
-export const agenda = async (req: Request, res: Response) => {
+export const agenda = async (req: any, res: Response) => {
   try {
-    const result = await listAgenda(req.query);
+    const result = await listAgenda(req.query, req.user?.id, req.user?.role);
     res.json(result);
   } catch (error: any) {
     res.status(500).json({ message: error.message });

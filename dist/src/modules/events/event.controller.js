@@ -53,7 +53,7 @@ const listByPlace = async (req, res) => {
 exports.listByPlace = listByPlace;
 const agenda = async (req, res) => {
     try {
-        const result = await (0, event_service_1.listAgenda)(req.query);
+        const result = await (0, event_service_1.listAgenda)(req.query, req.user?.id, req.user?.role);
         res.json(result);
     }
     catch (error) {

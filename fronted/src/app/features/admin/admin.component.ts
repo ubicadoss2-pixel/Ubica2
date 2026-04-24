@@ -5,6 +5,7 @@ import { AnalyticsSummary, AuditLog, Report } from '../../core/models/api.models
 import { AdminService } from '../../core/services/admin.service';
 import { AnalyticsService } from '../../core/services/analytics.service';
 import { ReportsService } from '../../core/services/reports.service';
+import { VerificationService, VerificationItem } from '../../core/services/verification.service';
 
 @Component({
   selector: 'app-admin',
@@ -17,13 +18,21 @@ export class AdminComponent {
   private readonly analyticsService = inject(AnalyticsService);
   private readonly reportsService = inject(ReportsService);
   private readonly adminService = inject(AdminService);
+  private readonly verificationService = inject(VerificationService);
   private readonly fb = inject(FormBuilder);
 
   readonly summary = signal<AnalyticsSummary | null>(null);
   readonly reports = signal<Report[]>([]);
+  readonly verifications = signal<VerificationItem[]>([]);
   readonly audit = signal<AuditLog[]>([]);
   readonly error = signal<string | null>(null);
   readonly info = signal<string | null>(null);
+
+  // Users management
+  readonly usersPage = signal<any>({ items: [], total: 0 });
+  readonly searchUser = signal('');
+  readonly filterRole = signal('');
+  readonly activeTab = signal<'dashboard' | 'users' | 'verifications' | 'reports' | 'audit'>('dashboard');
 
   readonly moderationForm = this.fb.nonNullable.group({
     placeId: '',
@@ -34,6 +43,12 @@ export class AdminComponent {
 
   constructor() {
     this.loadAll();
+  }
+
+  setTab(tab: 'dashboard' | 'users' | 'verifications' | 'reports' | 'audit'): void {
+    this.activeTab.set(tab);
+    // Carga perezosa de datos según la pestaña si fuera necesario, 
+    // pero por ahora mantenemos loadAll para simplicidad.
   }
 
   updateReport(reportId: string, status: 'OPEN' | 'IN_REVIEW' | 'RESOLVED' | 'REJECTED'): void {
@@ -74,7 +89,53 @@ export class AdminComponent {
   private loadAll(): void {
     this.loadSummary();
     this.loadReports();
+    this.loadVerifications();
     this.loadAudit();
+    this.loadUsers();
+  }
+
+  loadVerifications(): void {
+    this.verificationService.getVerifications().subscribe({
+      next: (data) => this.verifications.set(data),
+      error: (err) => this.error.set(err?.error?.message ?? 'No se cargaron verificaciones.'),
+    });
+  }
+
+  verify(id: string, status: 'APPROVED' | 'REJECTED'): void {
+    this.verificationService.updateStatus(id, status).subscribe({
+      next: () => {
+        this.info.set(`Solicitud ${status === 'APPROVED' ? 'aprobada' : 'rechazada'}.`);
+        this.loadVerifications();
+      },
+      error: (err) => this.error.set(err?.error?.message ?? 'Error al actualizar verificación.'),
+    });
+  }
+
+  loadUsers(): void {
+    this.adminService.getUsers(1, 20, this.searchUser(), this.filterRole()).subscribe({
+      next: (page) => this.usersPage.set(page),
+      error: (err) => this.error.set(err?.error?.message ?? 'No se pudieron cargar los usuarios.'),
+    });
+  }
+
+  updateUserRole(userId: string, targetSelectValue: string): void {
+    this.adminService.updateUserRole(userId, targetSelectValue).subscribe({
+      next: () => {
+        this.info.set('Rol actualizado correctamente');
+        this.loadUsers(); // refresh data
+      },
+      error: (err) => this.error.set('Error al actualizar los permisos'),
+    });
+  }
+
+  onFilterEvent(event: Event, type: 'search' | 'role'): void {
+    const val = (event.target as HTMLInputElement | HTMLSelectElement).value;
+    if (type === 'search') {
+      this.searchUser.set(val);
+    } else {
+      this.filterRole.set(val);
+    }
+    this.loadUsers();
   }
 
   private loadSummary(): void {

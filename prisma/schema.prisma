@@ -118,6 +118,7 @@ model EventCategory {
   name      String   @db.VarChar(100)
   createdAt DateTime @default(now()) @map("created_at")
   events    Event[]
+  userFavorites UserFavoriteCategory[]
 
   @@map("event_categories")
 }
@@ -144,14 +145,35 @@ model User {
   userSubscriptions UserPlan[] @relation("UserPlansRelation")
   passwordResetTokens PasswordResetToken[]
   preferences        UserPreference[]
+  favoriteCategories UserFavoriteCategory[]
+  history            UserHistory[]
   planFavorites PlanFavorite[]
   searchHistory SearchHistory[]
   promotionRedemptions PromotionRedemption[]
   chatConversations ChatConversation[]
   blockedUsers      UserBlock[] @relation("BlockedRelation")
   blockedByUsers   UserBlock[] @relation("BlockerRelation")
+  verifications      Verification[]
 
   @@map("users")
+}
+
+model Verification {
+  id              String   @id @default(uuid())
+  userId          String   @map("user_id")
+  fullName        String   @db.VarChar(160) @map("full_name")
+  documentType    String   @db.VarChar(50) @map("document_type")
+  documentNumber  String   @db.VarChar(100) @map("document_number")
+  fileUrl         String   @db.VarChar(500) @map("file_url")
+  status          String   @default("PENDING") @db.VarChar(30)
+  createdAt       DateTime @default(now()) @map("created_at")
+  updatedAt       DateTime @updatedAt @map("updated_at")
+
+  user            User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([status])
+  @@map("verifications")
 }
 
 model UserRole {
@@ -438,6 +460,32 @@ model UserPreference {
   @@unique([userId, key])
   @@index([userId])
   @@map("user_preferences")
+}
+
+model UserFavoriteCategory {
+  id         String       @id @default(uuid())
+  userId     String       @map("user_id")
+  categoryId String       @map("category_id")
+  createdAt  DateTime     @default(now()) @map("created_at")
+  user       User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  category   EventCategory @relation(fields: [categoryId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, categoryId])
+  @@index([userId])
+  @@map("user_favorite_categories")
+}
+
+model UserHistory {
+  id        String   @id @default(uuid())
+  userId    String   @map("user_id")
+  itemId    String   @map("item_id")
+  itemType  String   @db.VarChar(20) @map("item_type")  // 'place' o 'event'
+  viewedAt  DateTime @default(now()) @map("viewed_at")
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, viewedAt])
+  @@index([userId])
+  @@map("user_history")
 }
 
 model Plan {

@@ -1,29 +1,55 @@
-<section class="auth-card">
-  <h1>Iniciar sesión</h1>
-  <p>Accede para guardar favoritos, reportar y administrar según tu rol.</p>
+<section class="auth-wrapper">
+  <div class="auth-card pastel-theme">
+    <div class="brand">
+      <span class="logo-dot"></span>
+      <h1>Iniciar sesión</h1>
+    </div>
+    <p class="subtitle">Accede para guardar favoritos, reportar y administrar según tu rol.</p>
 
-  <form [formGroup]="form" (ngSubmit)="submit()">
-    <label>
-      Email
-      <input type="email" formControlName="email" placeholder="correo@dominio.com" />
-    </label>
+    <div class="alert success-alert" *ngIf="successMessage()">
+      <span class="icon">✨</span> {{ successMessage() }}
+    </div>
 
-    <label>
-      Contraseña
-      <input type="password" formControlName="password" placeholder="******" />
-    </label>
+    <form [formGroup]="form" (ngSubmit)="submit()">
+      <div class="input-group">
+        <label for="email">Correo Electrónico</label>
+        <div class="input-wrapper" [class.has-error]="isFieldInvalid('email')">
+          <input id="email" type="email" formControlName="email" placeholder="correo@dominio.com" />
+        </div>
+        <div class="field-error" *ngIf="isFieldInvalid('email')">
+          <span *ngIf="form.get('email')?.errors?.['required']">El correo es obligatorio.</span>
+          <span *ngIf="form.get('email')?.errors?.['email']">Debes ingresar un correo válido.</span>
+        </div>
+      </div>
 
-    <button type="submit" [disabled]="loading()">{{ loading() ? 'Ingresando...' : 'Entrar' }}</button>
-  </form>
+      <div class="input-group">
+        <label for="password">Contraseña</label>
+        <div class="input-wrapper" [class.has-error]="isFieldInvalid('password')">
+          <input id="password" type="password" formControlName="password" placeholder="••••••••" />
+        </div>
+        <div class="field-error" *ngIf="isFieldInvalid('password')">
+          <span *ngIf="form.get('password')?.errors?.['required']">La contraseña es obligatoria.</span>
+          <span *ngIf="form.get('password')?.errors?.['minlength']">Mínimo 6 caracteres.</span>
+        </div>
+      </div>
 
-  <p class="error" *ngIf="error()">{{ error() }}</p>
+      <div class="alert error-alert" *ngIf="error()">
+        <span class="icon">⚠️</span> {{ error() }}
+      </div>
 
-  <p class="hint">
-    <a routerLink="/forgot-password">¿Olvidaste tu contraseña?</a>
-  </p>
+      <button type="submit" [disabled]="loading() || form.invalid" class="btn-primary">
+        <span class="spinner" *ngIf="loading()"></span>
+        {{ loading() ? 'Verificando credenciales...' : 'Entrar' }}
+      </button>
+    </form>
 
-  <p class="hint">
-    ¿Aún no tienes cuenta?
-    <a routerLink="/register">Crear cuenta</a>
-  </p>
+    <div class="auth-footer">
+      <p class="hint">
+        <a routerLink="/forgot-password">¿Olvidaste tu contraseña?</a>
+      </p>
+      <p class="hint">
+        ¿Aún no tienes cuenta? <a routerLink="/register">Crear cuenta</a>
+      </p>
+    </div>
+  </div>
 </section>

@@ -29,6 +29,7 @@ export class RegisterComponent {
   submit(): void {
     if (this.form.invalid) {
       this.form.markAllAsTouched();
+      this.error.set('Por favor completa todos los campos requeridos.');
       return;
     }
 
@@ -37,18 +38,21 @@ export class RegisterComponent {
 
     const formValue = this.form.getRawValue();
     const payload = {
-      ...formValue,
-      phone: formValue.phone.trim() || undefined,
+      fullName: formValue.fullName,
+      email: formValue.email,
+      password: formValue.password,
+      phone: formValue.phone?.trim() || undefined,
     };
 
     this.authApi.register(payload).subscribe({
       next: () => {
         this.loading.set(false);
-        this.router.navigate(['/']);
+        this.router.navigate(['/login'], { queryParams: { registered: 'true' } });
       },
       error: (err) => {
         this.loading.set(false);
-        this.error.set(err?.error?.message ?? 'No fue posible crear la cuenta.');
+        const msg = err?.error?.message || err?.message || 'No fue posible crear la cuenta. Verifica tu conexión e intenta de nuevo.';
+        this.error.set(msg);
       },
     });
   }

@@ -14,6 +14,7 @@ const KNOWN_KEYS = [
   "radius_km",
   "default_search_lat",
   "default_search_lng",
+  "font_size"
 ];
 
 export const getUserPreferences = async (userId: string) => {
@@ -28,6 +29,20 @@ export const getUserPreferences = async (userId: string) => {
   }
 
   return result;
+};
+
+export const getFavoriteCategories = async (userId: string) => {
+  const favs = await prisma.userFavoriteCategory.findMany({
+    where: { userId },
+    include: { category: true }
+  });
+  return favs.map(f => f.category);
+};
+
+export const getAllCategories = async () => {
+  return await prisma.eventCategory.findMany({
+    orderBy: { name: 'asc' }
+  });
 };
 
 export const setPreference = async (userId: string, data: SetPreferenceDTO) => {
@@ -55,28 +70,69 @@ export const setManyPreferences = async (
   userId: string,
   data: SetManyPreferencesDTO
 ) => {
-  const results = await Promise.all(
-    data.preferences.map((pref) =>
-      prisma.userPreference.upsert({
-        where: {
-          userId_key: {
-            userId,
-            key: pref.key,
-          },
-        },
-        update: {
-          value: pref.value,
-        },
-        create: {
+  const operations = data.preferences.map((pref) =>
+    prisma.userPreference.upsert({
+      where: {
+        userId_key: {
           userId,
           key: pref.key,
-          value: pref.value,
         },
-      })
-    )
+      },
+      update: {
+        value: pref.value,
+      },
+      create: {
+        userId,
+        key: pref.key,
+        value: pref.value,
+      },
+    })
   );
 
-  return results;
+  return await prisma.$transaction(operations);
+};
+
+export const setManyPreferencesRaw = async (userId: string, prefs: Record<string, string>) => {
+  const operations = Object.entries(prefs).map(([key, value]) =>
+    prisma.userPreference.upsert({
+      where: {
+        userId_key: {
+          userId,
+          key,
+        },
+      },
+      update: {
+        value,
+      },
+      create: {
+        userId,
+        key,
+        value,
+      },
+    })
+  );
+
+  return await prisma.$transaction(operations);
+};
+
+export const setFavoriteCategories = async (userId: string, categoryIds: string[]) => {
+  await prisma.$transaction(async (tx) => {
+    // 1. Limpiar favoritos anteriores de manera segura
+    await tx.userFavoriteCategory.deleteMany({
+      where: { userId }
+    });
+
+    // 2. Insertar las nuevas categorías
+    if (categoryIds.length > 0) {
+      await tx.userFavoriteCategory.createMany({
+        data: categoryIds.map(categoryId => ({
+          userId,
+          categoryId
+        })),
+        skipDuplicates: true
+      });
+    }
+  });
 };
 
 export const deletePreference = async (userId: string, key: string) => {

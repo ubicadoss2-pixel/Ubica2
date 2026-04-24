@@ -1,12 +1,13 @@
 import { Injectable, signal } from '@angular/core';
+import { toObservable } from '@angular/core/rxjs-interop';
+import { Subject } from 'rxjs';
 
 @Injectable({ providedIn: 'root' })
 export class AppStateService {
-  private refreshPlacesSignal = signal(0);
+  private refreshTrigger = new Subject<void>();
+  readonly refreshPlaces$ = this.refreshTrigger.asObservable();
   
-  readonly refreshPlaces = this.refreshPlacesSignal.asReadonly();
-
   triggerPlacesRefresh(): void {
-    this.refreshPlacesSignal.update(v => v + 1);
+    this.refreshTrigger.next();
   }
 }

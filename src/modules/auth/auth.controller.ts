@@ -52,3 +52,13 @@ export const resetPwd = async (req: Request, res: Response) => {
   }
 };
 
+export const logoutUser = async (req: Request, res: Response) => {
+  try {
+    // Aquí a futuro se podría enlazar con una lista negra (blacklist) de tokens en Redis o DB.
+    // Para JWT stateless y con el enfoque de frontend-handled, indicamos confirmación de éxito.
+    res.status(200).json({ message: "Sesión finalizada exitosamente." });
+  } catch (error: any) {
+    res.status(500).json({ message: "No se pudo cerrar la sesión correctamente." });
+  }
+};
+

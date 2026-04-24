@@ -9,7 +9,7 @@ import { Comment, CommentStats } from '../models/api.models';
 })
 export class CommentsService {
   private readonly http = inject(HttpClient);
-  private readonly apiUrl = `${environment.apiBaseUrl}/comments`;
+  private readonly apiUrl = `${environment.apiBaseUrl}/reviews`;
 
   list(params: { placeId?: string; eventId?: string; page?: number; pageSize?: number }): Observable<CommentStats> {
     return this.http.get<CommentStats>(this.apiUrl, { params: params as any });

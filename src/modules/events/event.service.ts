@@ -247,6 +247,15 @@ export const updateEvent = async (
           })),
         }
       : undefined,
+    photos: data.photos
+      ? {
+          deleteMany: {},
+          create: data.photos.map((url: string, index: number) => ({
+            url,
+            sortOrder: index,
+          })),
+        }
+      : undefined,
   };
 
   return prisma.event.update({
@@ -339,7 +348,7 @@ export const listEventsByPlace = async (placeId: string, query: any) => {
   return { page, pageSize, total: filtered.length, items: filtered };
 };
 
-export const listAgenda = async (query: any) => {
+export const listAgenda = async (query: any, userId?: string, role?: string) => {
   const page = Number(query.page) || 1;
   const pageSize = Number(query.pageSize) || 10;
   const { skip, take } = getPagination(page, pageSize);
@@ -349,8 +358,19 @@ export const listAgenda = async (query: any) => {
   const weekday = query.weekday !== undefined ? Number(query.weekday) : undefined;
   const date = query.date as string | undefined;
   const time = query.time as string | undefined;
+  const ownerId = query.ownerId as string | undefined;
 
-  const where: any = { deletedAt: null, place: { status: "PUBLISHED" } };
+  const where: any = { deletedAt: null };
+  
+  if (role === 'ADMIN') {
+    // Admin sees everything. If ownerId is provided, filter by it.
+    if (ownerId) where.place = { ownerUserId: ownerId };
+  } else if (ownerId && role === 'OWNER') {
+    where.place = { ownerUserId: ownerId };
+  } else {
+    where.place = { status: "PUBLISHED" };
+  }
+  
   if (cityId) where.place = { ...where.place, cityId };
   if (categoryId) where.categoryId = categoryId;
 

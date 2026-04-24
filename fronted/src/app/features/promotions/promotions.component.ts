@@ -11,36 +11,27 @@ import { Promotion } from '../../core/models/feature.models';
   standalone: true,
   imports: [CommonModule, RouterLink],
   template: `
-    <div class="container">
-      <h1>Promociones</h1>
-      
-      <div *ngIf="loading()" class="loading">Cargando...</div>
-      
-      <div *ngIf="!loading() && promotions().length === 0" class="empty">
-        No hay promociones activas en este momento.
+    <section class="promotions-page">
+      <div class="page-header">
+        <p class="eyebrow">Ofertas Especiales</p>
+        <h1>Promociones Activas</h1>
+        <p class="subtitle">Descubre las mejores ofertas de los lugares cercanos.</p>
       </div>
       
-      <div class="promotions-grid">
-        <div *ngFor="let promo of promotions()" class="promo-card">
+      <div *ngIf="loading()" class="loading">Cargando promociones...</div>
+      
+      <div *ngIf="!loading() && promotions().length === 0" class="empty-state">
+        <div class="icon">🏷️</div>
+        <h3>Sin promociones activas</h3>
+        <p>No hay ofertas especiales en este momento. Vuelve más tarde.</p>
+      </div>
+      
+      <div class="promotions-grid" *ngIf="!loading() && promotions().length > 0">
+        <article *ngFor="let promo of promotions()" class="promo-card">
           <div class="promo-badge" [class]="'promo-' + promo.discountType.toLowerCase()">
             <span *ngIf="promo.discountType === 'PERCENTAGE'">{{ promo.discountValue }}% OFF</span>
-            <span *ngIf="promo.discountType === 'FIXED'">\$\{{ promo.discountValue }} OFF</span>
+            <span *ngIf="promo.discountType === 'FIXED'">{{ promo.discountValue | currency:'COP' }} OFF</span>
             <span *ngIf="promo.discountType === 'BOGO'">BOGO</span>
-          </div>
-          
-          <h3>{{ promo.title }}</h3>
-          <p *ngIf="promo.description">{{ promo.description }}</p>
-          
-          <div class="promo-place" *ngIf="promo.place">
-            <small>{{ promo.place.name }}</small>
-          </div>
-          
-          <div class="promo-code" *ngIf="promo.code">
-            <code>{{ promo.code }}</code>
-          </div>
-          
-          <div class="promo-dates">
-            <small>Válido hasta: {{ promo.endDate | date:'shortDate' }}</small>
           </div>
           
           <button *ngIf="isLoggedIn()" 
@@ -49,71 +40,207 @@ import { Promotion } from '../../core/models/feature.models';
             {{ isFavorite(promo.id) ? '❤️' : '🤍' }}
           </button>
           
-          <a *ngIf="promo.place" [routerLink]="['/places', promo.place.id]" class="btn-place">
+          <h3>{{ promo.title }}</h3>
+          <p *ngIf="promo.description">{{ promo.description }}</p>
+          
+          <div class="promo-meta">
+            <div class="promo-place" *ngIf="promo.place">
+              <span class="icon">📍</span>
+              <small>{{ promo.place.name }}</small>
+            </div>
+            
+            <div class="promo-code" *ngIf="promo.code">
+              <code>{{ promo.code }}</code>
+            </div>
+            
+            <div class="promo-dates">
+              <span>Válido hasta: {{ promo.endDate | date:'dd MMM yyyy' }}</span>
+            </div>
+          </div>
+          
+          <a *ngIf="promo.place" [routerLink]="['/places', promo.place.id]" class="btn-primary">
             Ver lugar
           </a>
-        </div>
+        </article>
       </div>
-    </div>
+    </section>
   `,
   styles: [`
-    .container { max-width: 1200px; margin: 0 auto; padding: 1rem; }
-    h1 { margin-bottom: 1.5rem; }
-    .loading, .empty { text-align: center; padding: 2rem; color: #666; }
+    .promotions-page {
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 2rem 1.5rem;
+    }
+
+    .page-header {
+      text-align: center;
+      margin-bottom: 2.5rem;
+
+      .eyebrow {
+        font-size: 0.75rem;
+        letter-spacing: 0.12em;
+        text-transform: uppercase;
+        color: var(--identity-glow);
+        margin-bottom: 0.5rem;
+        font-weight: 600;
+      }
+
+      h1 {
+        font-family: var(--font-display);
+        font-size: 2.5rem;
+        color: var(--ink-primary);
+        margin: 0 0 0.75rem;
+      }
+
+      .subtitle {
+        color: var(--ink-secondary);
+        font-size: 1rem;
+      }
+    }
+
     .promotions-grid {
       display: grid;
       grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
-      gap: 1rem;
+      gap: 1.5rem;
     }
+
     .promo-card {
-      background: #fff;
-      border: 1px solid #e0e0e0;
-      border-radius: 8px;
-      padding: 1rem;
+      background: var(--surface-card);
+      border: 1px solid var(--border-quiet);
+      border-radius: var(--radius-md);
+      padding: 1.5rem;
       position: relative;
+      display: flex;
+      flex-direction: column;
+      gap: 0.75rem;
+      transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+
+      &:hover {
+        box-shadow: var(--shadow-md);
+        transform: translateY(-2px);
+      }
+
+      .btn-favorite {
+        position: absolute;
+        top: 1rem;
+        right: 1rem;
+        background: none;
+        border: none;
+        font-size: 1.25rem;
+        cursor: pointer;
+        padding: 0.25rem;
+        opacity: 0.6;
+        transition: opacity 0.2s;
+
+        &:hover { opacity: 1; }
+      }
+
+      h3 {
+        font-family: var(--font-display);
+        color: var(--ink-primary);
+        margin: 0.5rem 0 0.25rem;
+      }
+
+      p {
+        color: var(--ink-secondary);
+        font-size: 0.9rem;
+        line-height: 1.5;
+        margin: 0;
+      }
     }
+
     .promo-badge {
       position: absolute;
       top: -10px;
-      right: 10px;
-      background: #e74c3c;
-      color: white;
-      padding: 0.25rem 0.75rem;
-      border-radius: 4px;
-      font-weight: bold;
-      font-size: 0.875rem;
+      right: 20px;
+      padding: 0.35rem 0.75rem;
+      border-radius: var(--radius-sm);
+      font-weight: 800;
+      font-size: 0.8rem;
+      color: #fff;
+      box-shadow: var(--shadow-sm);
     }
-    .promo-percentage { background: #e74c3c; }
-    .promo-fixed { background: #27ae60; }
-    .promo-bogo { background: #3498db; }
-    .promo-card h3 { margin: 0.5rem 0; }
-    .promo-card p { color: #666; font-size: 0.9rem; margin: 0.5rem 0; }
-    .promo-place { color: #888; margin-top: 0.5rem; }
+
+    .promo-percentage { background: #ef4444; }
+    .promo-fixed { background: #22c55e; }
+    .promo-bogo { background: #3b82f6; }
+
+    .promo-meta {
+      display: flex;
+      flex-direction: column;
+      gap: 0.5rem;
+      margin-top: 0.5rem;
+    }
+
+    .promo-place {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      color: var(--ink-secondary);
+      font-size: 0.85rem;
+
+      .icon { font-size: 1rem; }
+    }
+
     .promo-code {
-      background: #f8f9fa;
+      background: var(--surface-soft);
       padding: 0.5rem;
-      border-radius: 4px;
+      border-radius: var(--radius-sm);
       text-align: center;
-      margin: 0.5rem 0;
+
+      code {
+        font-weight: 700;
+        letter-spacing: 0.1em;
+        color: var(--identity-glow);
+      }
     }
-    .promo-code code { font-weight: bold; letter-spacing: 2px; }
-    .promo-dates { color: #888; font-size: 0.8rem; }
-    .btn-favorite {
-      background: none;
-      border: none;
-      font-size: 1.5rem;
-      cursor: pointer;
-      padding: 0.25rem;
+
+    .promo-dates {
+      color: var(--ink-muted);
+      font-size: 0.75rem;
     }
-    .btn-place {
+
+    .btn-primary {
       display: block;
       text-align: center;
-      background: #007bff;
-      color: white;
-      padding: 0.5rem;
-      border-radius: 4px;
+      background: var(--identity-glow);
+      color: #fff;
+      padding: 0.75rem;
+      border-radius: var(--radius-sm);
       text-decoration: none;
-      margin-top: 0.5rem;
+      font-weight: 700;
+      margin-top: auto;
+      transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+
+      &:hover {
+        background: var(--identity-glow-hover);
+        transform: translateY(-1px);
+      }
+    }
+
+    .loading, .empty-state {
+      text-align: center;
+      padding: 4rem 2rem;
+    }
+
+    .empty-state {
+      background: var(--surface-soft);
+      border-radius: var(--radius-md);
+
+      .icon {
+        font-size: 3rem;
+        margin-bottom: 1rem;
+      }
+
+      h3 {
+        font-family: var(--font-display);
+        color: var(--ink-primary);
+        margin: 0 0 0.5rem;
+      }
+
+      p {
+        color: var(--ink-secondary);
+      }
     }
   `]
 })

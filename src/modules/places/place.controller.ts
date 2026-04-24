@@ -36,6 +36,11 @@ export const list = async (req: any, res: Response) => {
 export const getById = async (req: Request, res: Response) => {
   try {
     const placeId = String(req.params.id);
+    
+    if (!placeId || placeId === 'null' || placeId === 'undefined') {
+      return res.status(400).json({ message: "ID de lugar inválido" });
+    }
+    
     const place = await getPlaceById(placeId);
     if (!place) return res.status(404).json({ message: "Lugar no encontrado" });
     res.json(place);

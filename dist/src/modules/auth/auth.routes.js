@@ -2,7 +2,11 @@
 Object.defineProperty(exports, "__esModule", { value: true });
 const express_1 = require("express");
 const auth_controller_1 = require("./auth.controller");
+const auth_middleware_1 = require("../../shared/middlewares/auth.middleware");
 const router = (0, express_1.Router)();
 router.post("/register", auth_controller_1.register);
 router.post("/login", auth_controller_1.login);
+router.get("/me", auth_middleware_1.authMiddleware, auth_controller_1.me);
+router.post("/forgot-password", auth_controller_1.forgotPwd);
+router.post("/reset-password", auth_controller_1.resetPwd);
 exports.default = router;

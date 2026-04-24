@@ -20,6 +20,8 @@ import searchHistoryRoutes from "./modules/search-history/search-history.routes"
 import promotionRoutes from "./modules/promotions/promotions.routes";
 import chatbotRoutes from "./modules/chatbot/chatbot.routes";
 import userBlockRoutes from "./modules/user-blocks/user-blocks.routes";
+import historyRoutes from "./modules/history/history.routes";
+import verificationRoutes from "./modules/verification/verification.routes";
 import { errorHandler, notFound } from "./shared/middlewares/error.middleware";
 
 const app = express();
@@ -27,11 +29,12 @@ const app = express();
 app.use(cors());
 app.use(helmet());
 app.use(morgan("dev"));
-app.use(express.json());
+app.use(express.json({ limit: "50mb" }));
+app.use(express.urlencoded({ limit: "50mb", extended: true }));
 app.use(
   rateLimit({
     windowMs: 60 * 1000,
-    max: 120,
+    max: 10000,
     standardHeaders: true,
     legacyHeaders: false,
   })
@@ -58,6 +61,9 @@ app.use("/api/search-history", searchHistoryRoutes);
 app.use("/api/promotions", promotionRoutes);
 app.use("/api/chatbot", chatbotRoutes);
 app.use("/api/user-blocks", userBlockRoutes);
+app.use("/api/history", historyRoutes);
+app.use("/api/verificacion", verificationRoutes);
+app.use("/uploads", express.static("uploads"));
 
 app.use(notFound);
 app.use(errorHandler);

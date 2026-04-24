@@ -1,0 +1,12 @@
+"use strict";
+Object.defineProperty(exports, "__esModule", { value: true });
+const express_1 = require("express");
+const search_history_controller_1 = require("./search-history.controller");
+const auth_middleware_1 = require("../../shared/middlewares/auth.middleware");
+const router = (0, express_1.Router)();
+router.use(auth_middleware_1.authMiddleware);
+router.post("/", search_history_controller_1.createSearchEntry);
+router.get("/", search_history_controller_1.getHistory);
+router.delete("/", search_history_controller_1.clearHistory);
+router.delete("/:id", search_history_controller_1.deleteHistoryItem);
+exports.default = router;

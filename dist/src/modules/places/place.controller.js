@@ -6,7 +6,8 @@ const place_service_1 = require("./place.service");
 const create = async (req, res) => {
     try {
         const payload = place_schema_1.createPlaceSchema.parse(req.body);
-        const place = await (0, place_service_1.createPlace)(payload, req.user.id);
+        const isAdmin = req.user.role === "ADMIN";
+        const place = await (0, place_service_1.createPlace)(payload, req.user.id, isAdmin);
         res.status(201).json(place);
     }
     catch (error) {
@@ -39,6 +40,9 @@ exports.list = list;
 const getById = async (req, res) => {
     try {
         const placeId = String(req.params.id);
+        if (!placeId || placeId === 'null' || placeId === 'undefined') {
+            return res.status(400).json({ message: "ID de lugar inválido" });
+        }
         const place = await (0, place_service_1.getPlaceById)(placeId);
         if (!place)
             return res.status(404).json({ message: "Lugar no encontrado" });

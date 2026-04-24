@@ -1,19 +1,21 @@
 import { CommonModule } from '@angular/common';
 import { Component, inject, signal } from '@angular/core';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
-import { ActivatedRoute, Router } from '@angular/router';
+import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { Comment, EventItem, Place } from '../../core/models/api.models';
 import { AnalyticsService } from '../../core/services/analytics.service';
+import { AuthStoreService } from '../../core/services/auth-store.service';
 import { CommentsService } from '../../core/services/comments.service';
 import { EventsService } from '../../core/services/events.service';
 import { FavoritesService } from '../../core/services/favorites.service';
 import { PlacesService } from '../../core/services/places.service';
 import { ReportsService } from '../../core/services/reports.service';
+import { HistoryService } from '../../core/services/preferences-history.service';
 
 @Component({
   selector: 'app-place-detail',
   standalone: true,
-  imports: [CommonModule, ReactiveFormsModule],
+  imports: [CommonModule, ReactiveFormsModule, RouterLink],
   templateUrl: './place-detail.component.html',
   styleUrl: './place-detail.component.scss',
 })
@@ -27,6 +29,8 @@ export class PlaceDetailComponent {
   private readonly fb = inject(FormBuilder);
   private readonly commentsService = inject(CommentsService);
   private readonly router = inject(Router);
+  private readonly historyService = inject(HistoryService);
+  readonly auth = inject(AuthStoreService);
 
   readonly place = signal<Place | null>(null);
   readonly events = signal<EventItem[]>([]);
@@ -35,10 +39,16 @@ export class PlaceDetailComponent {
   readonly totalComments = signal(0);
   readonly error = signal<string | null>(null);
   readonly info = signal<string | null>(null);
+  readonly commentLoading = signal(false);
 
   readonly reportForm = this.fb.nonNullable.group({
     reason: ['WRONG_INFO', Validators.required],
     details: [''],
+  });
+
+  readonly commentForm = this.fb.nonNullable.group({
+    rating: [undefined as number | undefined, Validators.required],
+    content: ['', [Validators.required, Validators.minLength(3)]],
   });
 
   constructor() {
@@ -116,11 +126,37 @@ export class PlaceDetailComponent {
     });
   }
 
+  submitComment(): void {
+    const current = this.place();
+    if (!current) return;
+
+    const { rating, content } = this.commentForm.getRawValue();
+    this.commentLoading.set(true);
+
+    this.commentsService.create({
+      placeId: current.id,
+      rating,
+      content,
+    }).subscribe({
+      next: () => {
+        this.commentLoading.set(false);
+        this.commentForm.reset({ rating: undefined, content: '' });
+        this.info.set('Reseña publicada correctamente.');
+        this.loadData(current.id);
+      },
+      error: (err) => {
+        this.commentLoading.set(false);
+        this.error.set(err?.error?.message ?? 'No se pudo publicar la reseña.');
+      },
+    });
+  }
+
   private loadData(placeId: string): void {
     this.placesService.getById(placeId).subscribe({
       next: (place) => {
         this.place.set(place);
         this.analyticsService.create({ eventType: 'PLACE_VIEW', placeId }).subscribe();
+        this.historyService.addToHistory(placeId, 'place').subscribe();
       },
       error: (err) => this.error.set(err?.error?.message ?? 'No se pudo cargar el lugar.'),
     });
@@ -130,6 +166,7 @@ export class PlaceDetailComponent {
         this.events.set(response.items);
         response.items.forEach((event) => {
           this.analyticsService.create({ eventType: 'EVENT_VIEW', eventId: event.id }).subscribe();
+          this.historyService.addToHistory(event.id, 'event').subscribe();
         });
       },
       error: () => this.events.set([]),

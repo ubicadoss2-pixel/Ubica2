@@ -1,7 +1,8 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.errorHandler = exports.notFound = void 0;
-const notFound = (_req, res) => {
+const notFound = (req, res) => {
+    console.log(`[404] Not Found: ${req.method} ${req.originalUrl}`);
     res.status(404).json({ message: "Ruta no encontrada" });
 };
 exports.notFound = notFound;

@@ -1,0 +1,12 @@
+"use strict";
+Object.defineProperty(exports, "__esModule", { value: true });
+const express_1 = require("express");
+const user_blocks_controller_1 = require("./user-blocks.controller");
+const auth_middleware_1 = require("../../shared/middlewares/auth.middleware");
+const router = (0, express_1.Router)();
+router.use(auth_middleware_1.authMiddleware);
+router.post("/", user_blocks_controller_1.block);
+router.delete("/:blockedId", user_blocks_controller_1.unblock);
+router.get("/", user_blocks_controller_1.listBlocked);
+router.get("/:userId/check", user_blocks_controller_1.checkBlocked);
+exports.default = router;

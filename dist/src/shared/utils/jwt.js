@@ -9,13 +9,13 @@ const ACCESS_SECRET = process.env.JWT_SECRET;
 const REFRESH_SECRET = process.env.JWT_REFRESH_SECRET;
 const generateAccessToken = (payload) => {
     return jsonwebtoken_1.default.sign(payload, ACCESS_SECRET, {
-        expiresIn: "30d",
+        expiresIn: "24h", // Tiempo más seguro pero cómodo
     });
 };
 exports.generateAccessToken = generateAccessToken;
 const generateRefreshToken = (payload) => {
     return jsonwebtoken_1.default.sign(payload, REFRESH_SECRET, {
-        expiresIn: "7d",
+        expiresIn: "30d", // El refresh token dura más
     });
 };
 exports.generateRefreshToken = generateRefreshToken;

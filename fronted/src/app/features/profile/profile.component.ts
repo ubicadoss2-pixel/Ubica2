@@ -5,11 +5,12 @@ import { RouterLink } from '@angular/router';
 import { ProfileService, UserProfile } from '../../core/services/profile.service';
 import { AuthStoreService } from '../../core/services/auth-store.service';
 import { PlacesService } from '../../core/services/places.service';
+import { TranslatePipe } from '../../core/pipes/translate.pipe';
 
 @Component({
   selector: 'app-profile',
   standalone: true,
-  imports: [CommonModule, ReactiveFormsModule, RouterLink],
+  imports: [CommonModule, ReactiveFormsModule, RouterLink, TranslatePipe],
   templateUrl: './profile.component.html',
   styleUrl: './profile.component.scss',
 })
@@ -23,6 +24,7 @@ export class ProfileComponent implements OnInit {
   readonly loading = signal(true);
   readonly error = signal<string | null>(null);
   readonly success = signal<string | null>(null);
+  readonly isDragOver = signal(false);
 
   readonly isOwner = computed(() => {
     const fromAuth = this.authStore.hasRole('OWNER', 'ADMIN');
@@ -39,6 +41,10 @@ export class ProfileComponent implements OnInit {
 
   ngOnInit() {
     this.loadProfile();
+  }
+
+  hasRole(role: string): boolean {
+    return this.profile()?.userRoles?.some(ur => ur.role.code === role) ?? false;
   }
 
   private loadProfile() {
@@ -58,6 +64,54 @@ export class ProfileComponent implements OnInit {
         this.loading.set(false);
       }
     });
+  }
+
+  onDragOver(event: DragEvent) {
+    event.preventDefault();
+    this.isDragOver.set(true);
+  }
+
+  onDragLeave(event: DragEvent) {
+    event.preventDefault();
+    this.isDragOver.set(false);
+  }
+
+  onDrop(event: DragEvent) {
+    event.preventDefault();
+    this.isDragOver.set(false);
+    const files = event.dataTransfer?.files;
+    if (files && files.length > 0) {
+      this.handleFile(files[0]);
+    }
+  }
+
+  onFileSelected(event: Event) {
+    const input = event.target as HTMLInputElement;
+    if (input.files && input.files.length > 0) {
+      this.handleFile(input.files[0]);
+    }
+  }
+
+  private handleFile(file: File) {
+    if (!file.type.startsWith('image/')) {
+      this.error.set('Por favor, selecciona una imagen válida.');
+      return;
+    }
+
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      const base64Url = e.target?.result as string;
+      this.form.patchValue({ avatarUrl: base64Url });
+      
+      const current = this.profile();
+      if (current) {
+        this.profile.set({ ...current, avatarUrl: base64Url });
+      }
+    };
+    reader.onerror = () => {
+      this.error.set('Error al leer la imagen.');
+    };
+    reader.readAsDataURL(file);
   }
 
   onSubmit() {

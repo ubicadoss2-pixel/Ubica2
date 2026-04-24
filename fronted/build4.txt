@@ -1,0 +1,40 @@
+[33m❯[39m Building...
+[32m✔[39m Building...
+[1mInitial chunk files[22m[2m | [22m[1mNames[22m        [2m | [22m[1mRaw size[22m[2m | [22m[1mEstimated transfer size[22m
+[32mmain-4CG3L7K7.js[39m   [2m | [22m[2mmain[22m         [2m | [22m [36m1.54 MB[39m[2m | [22m              [36m218.77 kB[39m
+[32mstyles-WE4L4I5W.css[39m[2m | [22m[2mstyles[22m       [2m | [22m[36m32.67 kB[39m[2m | [22m                [36m5.12 kB[39m
+
+[1m [22m                  [2m | [22m[1mInitial total[22m[2m | [22m [1m1.57 MB[22m[2m | [22m              [1m223.89 kB[22m
+
+Application bundle generation complete. [6.888 seconds] - 2026-03-27T20:23:49.538Z
+
+[1m[33m[33m▲ [43;33m[[43;30mWARNING[43;33m][0m [1mNG8113: RouterLink is not used within the template of SettingsComponent[0m [1m[35m[plugin angular-compiler][0m
+
+    src/app/features/settings/settings.component.ts:12:39:
+[37m      12 │   imports: [CommonModule, FormsModule, [32mRouterLink[37m, TranslatePipe],
+         ╵                                        [32m~~~~~~~~~~[0m
+
+
+[33m▲ [43;33m[[43;30mWARNING[43;33m][0m [1msrc/app/features/home/home.component.scss exceeded maximum budget. Budget 8.00 kB was not met by 2.85 kB with a total of 10.85 kB.[0m
+
+
+[33m▲ [43;33m[[43;30mWARNING[43;33m][0m [1msrc/app/features/owner/place-create/place-create.component.scss exceeded maximum budget. Budget 8.00 kB was not met by 4.38 kB with a total of 12.38 kB.[0m
+
+
+[33m▲ [43;33m[[43;30mWARNING[43;33m][0m [1msrc/app/features/profile/profile.component.scss exceeded maximum budget. Budget 8.00 kB was not met by 6.04 kB with a total of 14.04 kB.[0m
+
+
+[33m▲ [43;33m[[43;30mWARNING[43;33m][0m [1mModule 'leaflet' used by 'src/app/features/home/home.component.ts' is not ESM[0m
+
+  CommonJS or AMD dependencies can cause optimization bailouts.
+  For more information see: [4mhttps://angular.dev/tools/cli/build#configuring-commonjs-dependencies[0m
+
+
+[33m▲ [43;33m[[43;30mWARNING[43;33m][0m [1mModule 'leaflet-routing-machine' used by 'src/app/features/home/home.component.ts' is not ESM[0m
+
+  CommonJS or AMD dependencies can cause optimization bailouts.
+  For more information see: [4mhttps://angular.dev/tools/cli/build#configuring-commonjs-dependencies[0m
+
+[39m[22m
+Output location: C:\Users\SoporteSENA\Desktop\ubica2-main\Ubica2\fronted\dist\fronted
+

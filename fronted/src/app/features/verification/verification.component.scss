@@ -1,0 +1,47 @@
+@import '../auth/login/login.component.scss';
+
+// Extend base auth card styles for specific verification tweaks
+.auth-wrapper {
+  // Inherits from login.component.scss using the same path patterns if global,
+  // but since we imported login SCSS directly here, all classes will be available 
+  // for the verification form to use the same modern marketplace template!
+}
+
+.status-box {
+  margin-bottom: 2rem;
+}
+
+.pending-alert {
+  background: #fffbeb;
+  color: #92400e;
+  border-left: 4px solid #f59e0b;
+}
+
+.status-text {
+  flex: 1;
+  p { margin: 0.2rem 0 0; font-size: 0.9rem; opacity: 0.9; }
+}
+
+.file-wrapper {
+  input[type="file"] {
+    padding: 0.5rem;
+    cursor: pointer;
+    background: #fdfdfd;
+    
+    &::file-selector-button {
+      background: var(--surface-soft);
+      border: 1px solid var(--border-quiet);
+      border-radius: 8px;
+      padding: 0.5rem 1rem;
+      margin-right: 1rem;
+      color: var(--ink-primary);
+      font-weight: 500;
+      cursor: pointer;
+      transition: background 0.3s;
+      
+      &:hover {
+        background: #e2e8f0;
+      }
+    }
+  }
+}

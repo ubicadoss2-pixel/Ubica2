@@ -6,13 +6,15 @@ import { CatalogsService } from '../../../core/services/catalogs.service';
 import { EventsService } from '../../../core/services/events.service';
 import { PlacesService } from '../../../core/services/places.service';
 import { PlansService, UserPlan } from '../../../core/services/plans.service';
+import { AppStateService } from '../../../core/services/app-state.service';
+import { AuthStoreService } from '../../../core/services/auth-store.service';
 
 @Component({
   selector: 'app-event-edit',
   standalone: true,
   imports: [CommonModule, ReactiveFormsModule, RouterLink],
   templateUrl: './event-edit.component.html',
-  styleUrl: '../event-create/event-create.component.scss',
+  styleUrl: '../place-create/place-create.component.scss',
 })
 export class EventEditComponent implements OnInit {
   private readonly fb = inject(FormBuilder);
@@ -22,14 +24,15 @@ export class EventEditComponent implements OnInit {
   private readonly plansService = inject(PlansService);
   private readonly route = inject(ActivatedRoute);
   private readonly router = inject(Router);
+  private readonly appState = inject(AppStateService);
+  private readonly authStore = inject(AuthStoreService);
 
   readonly myPlaces = signal<Array<{ id: string; name: string }>>([]);
   readonly categories = signal<Array<{ id: string; name: string }>>([]);
   readonly error = signal<string | null>(null);
   readonly info = signal<string | null>(null);
+  readonly loading = signal(false);
 
-  readonly currentStep = signal(1);
-  readonly totalSteps = 3;
   readonly eventId = signal<string | null>(null);
 
   readonly myPlan = signal<UserPlan | null>(null);
@@ -38,7 +41,7 @@ export class EventEditComponent implements OnInit {
 
   readonly form = this.fb.nonNullable.group({
     placeId: ['', Validators.required],
-    categoryId: ['', Validators.required],
+    categoryId: [''],
     title: ['', [Validators.required, Validators.minLength(3)]],
     description: [''],
     startTime: ['', Validators.required],
@@ -47,7 +50,6 @@ export class EventEditComponent implements OnInit {
     priceTo: [''],
     currency: ['COP'],
     status: ['ACTIVE'],
-    recurrenceWeekday: [''],
   });
 
   ngOnInit() {
@@ -57,17 +59,35 @@ export class EventEditComponent implements OnInit {
       this.loadEvent(id);
     }
 
+    const currentUser = this.authStore.user();
+    if (currentUser) {
+      this.placesService.list({ pageSize: 100, ownerId: currentUser.id }).subscribe((res) => this.myPlaces.set(res.items));
+    }
     this.catalogsService.getEventCategories().subscribe((items) => this.categories.set(items));
-    this.placesService.list({ pageSize: 100 }).subscribe((res) => this.myPlaces.set(res.items));
-    this.plansService.getMyPlan().subscribe((p) => {
-      this.myPlan.set(p);
-      this.maxPhotos.set(p && Number(p.plan.price) > 0 ? 10 : 3);
+    this.loadMyPlan();
+  }
+
+  private loadMyPlan(): void {
+    this.plansService.getMyPlan().subscribe({
+      next: (p) => {
+        this.myPlan.set(p);
+        if (p && Number(p.plan.limitEvents) > 3) {
+          this.maxPhotos.set(10);
+        } else {
+          this.maxPhotos.set(3);
+        }
+      },
+      error: () => {
+        this.maxPhotos.set(3);
+      }
     });
   }
 
   loadEvent(id: string) {
+    this.loading.set(true);
     this.eventsService.getById(id).subscribe({
       next: (event) => {
+        this.loading.set(false);
         this.form.patchValue({
           placeId: event.placeId,
           categoryId: event.categoryId || '',
@@ -79,34 +99,27 @@ export class EventEditComponent implements OnInit {
           priceTo: event.priceTo?.toString() || '',
           currency: event.currency,
           status: event.status as any,
-          recurrenceWeekday: event.recurrence?.weekday?.toString() || '',
         });
-        // Photos mapping if exist in EventItem
         const anyEvent = event as any;
         if (anyEvent.photos) {
           this.photos.set(anyEvent.photos.map((p: any) => p.url));
         }
       },
-      error: () => this.error.set('No se pudo cargar el evento.')
+      error: () => {
+        this.loading.set(false);
+        this.error.set('No se pudo cargar el evento.');
+      }
     });
   }
 
-  nextStep(): void {
-    if (this.currentStep() < this.totalSteps) {
-      this.currentStep.set(this.currentStep() + 1);
-    }
-  }
-
-  prevStep(): void {
-    if (this.currentStep() > 1) {
-      this.currentStep.set(this.currentStep() - 1);
-    }
-  }
-
   addPhoto(url: string): void {
-    if (url && this.photos().length < this.maxPhotos()) {
-      this.photos.update(p => [...p, url]);
+    if (!url.trim()) return;
+    if (this.photos().length >= this.maxPhotos()) {
+      this.error.set(`Límite alcanzado: Tu plan permite hasta ${this.maxPhotos()} fotos.`);
+      return;
     }
+    this.photos.update(p => [...p, url]);
+    this.error.set(null);
   }
 
   removePhoto(index: number): void {
@@ -114,12 +127,19 @@ export class EventEditComponent implements OnInit {
   }
 
   submit(): void {
-    if (this.form.invalid || !this.eventId()) return;
+    if (this.form.invalid) {
+      this.form.markAllAsTouched();
+      this.error.set('Por favor completa todos los campos requeridos.');
+      return;
+    }
+
+    this.loading.set(true);
+    this.error.set(null);
 
     const values = this.form.getRawValue();
     const payload: any = {
       placeId: values.placeId,
-      categoryId: values.categoryId,
+      categoryId: values.categoryId || undefined,
       title: values.title,
       description: values.description || undefined,
       startTime: values.startTime,
@@ -131,16 +151,21 @@ export class EventEditComponent implements OnInit {
       photos: this.photos(),
     };
 
-    if (values.recurrenceWeekday) {
-      payload.recurrence = { weekday: Number(values.recurrenceWeekday) };
-    }
-
     this.eventsService.update(this.eventId()!, payload).subscribe({
-      next: () => {
-        this.info.set('Evento actualizado.');
-        setTimeout(() => this.router.navigate(['/profile']), 2000);
+      next: (event) => {
+        this.loading.set(false);
+        this.info.set('¡Perfecto! Los cambios han sido guardados exitosamente.');
+        
+        this.appState.triggerPlacesRefresh();
+
+        setTimeout(() => {
+          this.router.navigate(['/agenda']);
+        }, 2000);
       },
-      error: (err) => this.error.set(err?.error?.message ?? 'Error al actualizar.')
+      error: (err) => {
+        this.loading.set(false);
+        this.error.set(err?.error?.message ?? 'No fue posible guardar los cambios. Intenta de nuevo.');
+      },
     });
   }
 }

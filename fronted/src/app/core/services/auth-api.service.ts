@@ -1,4 +1,4 @@
-import { Injectable } from '@angular/core';
+  import { Injectable } from '@angular/core';
 import { map, tap } from 'rxjs/operators';
 import { AuthTokens, JwtUser, RegisterResponse } from '../models/api.models';
 import { ApiService } from './api.service';
@@ -27,5 +27,9 @@ export class AuthApiService extends ApiService {
       }),
       map(() => void 0)
     );
+  }
+
+  logout() {
+    return this.http.post(`${this.baseUrl}/auth/logout`, {});
   }
 }

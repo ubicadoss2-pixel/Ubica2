@@ -25,6 +25,7 @@ exports.createPlaceSchema = zod_1.z.object({
     description: zod_1.z.string().optional(),
     addressLine: zod_1.z.string().max(240).optional(),
     neighborhood: zod_1.z.string().max(140).optional(),
+    postalCode: zod_1.z.string().max(20).optional(),
     latitude: zod_1.z.number().optional(),
     longitude: zod_1.z.number().optional(),
     priceLevel: zod_1.z.number().int().min(1).max(5).optional(),
@@ -32,6 +33,7 @@ exports.createPlaceSchema = zod_1.z.object({
     contacts: zod_1.z.array(exports.placeContactSchema).optional(),
     socialLinks: zod_1.z.array(exports.placeSocialSchema).optional(),
     openingHours: zod_1.z.array(exports.openingHourSchema).optional(),
+    photos: zod_1.z.array(zod_1.z.string().max(500)).optional(),
 });
 exports.updatePlaceSchema = exports.createPlaceSchema.partial();
 exports.placeStatusSchema = zod_1.z.object({

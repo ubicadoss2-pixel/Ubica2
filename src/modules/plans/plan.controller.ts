@@ -1,4 +1,5 @@
 import { Request, Response } from "express";
+import { prisma } from "../../config/prisma";
 import { subscribePlanSchema } from "./plan.schema";
 import { listPlans, getMyActivePlan, subscribeToPlan, createCheckoutSession } from "./plan.service";
 
@@ -26,7 +27,15 @@ export const subscribe = async (req: Request, res: Response) => {
     const userId = (req as any).user.id;
     const body = subscribePlanSchema.parse(req.body);
     const subscription = await subscribeToPlan(userId, body.planId);
-    res.status(201).json(subscription);
+    
+    const updatedUser = await prisma.user.findUnique({
+      where: { id: userId },
+      include: { userRoles: { include: { role: true } } }
+    });
+    
+    const role = updatedUser?.userRoles.find((ur: any) => ur.role.name === 'OWNER') ? 'OWNER' : 'USER';
+    
+    res.status(201).json({ subscription, role });
   } catch (error: any) {
     if (error.name === "ZodError") {
       res.status(400).json({ error: "Datos invalidos", details: error.errors });

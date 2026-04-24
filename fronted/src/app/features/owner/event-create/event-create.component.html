@@ -1,130 +1,255 @@
-<div class="create-container">
-  <div class="card wizard-card">
-    <div class="wizard-header">
-      <h2>Crear Nuevo Evento</h2>
-      <div class="step-indicator">
-        <span [class.active]="currentStep() >= 1">1. Básico</span>
-        <div class="line" [class.active]="currentStep() >= 2"></div>
-        <span [class.active]="currentStep() >= 2">2. Detalles & Fecha</span>
-        <div class="line" [class.active]="currentStep() >= 3"></div>
-        <span [class.active]="currentStep() >= 3">3. Multimedia</span>
+<div class="create-place-page">
+  <div class="create-header">
+    <button class="back-btn" routerLink="/">
+      <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <path d="M19 12H5M12 19l-7-7 7-7"/>
+      </svg>
+      Volver
+    </button>
+    <div class="header-content">
+      <h1>Crear Nuevo Evento</h1>
+      <p>Agrega un nuevo evento a la plataforma</p>
+    </div>
+  </div>
+
+  <form [formGroup]="form" (ngSubmit)="submit()" class="create-form">
+    <div class="form-grid">
+      <!-- Columna Izquierda: Información del Evento -->
+      <div class="form-card main-info">
+        <div class="card-header">
+          <div class="icon-box">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <rect x="3" y="4" width="18" height="18" rx="2" ry="2"/>
+              <line x1="16" y1="2" x2="16" y2="6"/>
+              <line x1="8" y1="2" x2="8" y2="6"/>
+              <line x1="3" y1="10" x2="21" y2="10"/>
+            </svg>
+          </div>
+          <div>
+            <h2>Información del Evento</h2>
+            <span class="subtitle">Datos básicos del evento</span>
+          </div>
+        </div>
+
+        <div class="form-body">
+          <div class="form-group">
+            <label>Título del Evento *</label>
+            <input type="text" formControlName="title" placeholder="Ej: Concierto en la Playa" class="modern-input" />
+            <span class="hint">El nombre que verán los usuarios</span>
+          </div>
+
+          <div class="form-row">
+            <div class="form-group">
+              <label>Lugar (Sede) *</label>
+              <select formControlName="placeId" class="modern-select">
+                <option value="">Selecciona un lugar</option>
+                <option *ngFor="let place of places()" [value]="place.id">{{ place.name }}</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label>Categoría</label>
+              <select formControlName="categoryId" class="modern-select">
+                <option value="">Selecciona categoría</option>
+                <option *ngFor="let cat of categories()" [value]="cat.id">{{ cat.name }}</option>
+              </select>
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label>Descripción</label>
+            <textarea formControlName="description" rows="3" placeholder="¿De qué trata este evento?" class="modern-textarea"></textarea>
+          </div>
+
+          <div class="form-row">
+            <div class="form-group">
+              <label>Código de Vestimenta</label>
+              <input type="text" formControlName="dressCode" placeholder="Casual / Elegante" class="modern-input" />
+            </div>
+            <div class="form-group">
+              <label>Edad Mínima</label>
+              <input type="number" formControlName="minAge" placeholder="18" class="modern-input" />
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Columna Derecha: Fecha, Hora y Precio -->
+      <div class="form-card location-info">
+        <div class="card-header">
+          <div class="icon-box accent">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <circle cx="12" cy="12" r="10"/>
+              <polyline points="12,6 12,12 16,14"/>
+            </svg>
+          </div>
+          <div>
+            <h2>Fecha y Hora</h2>
+            <span class="subtitle">Cuándo ocurre el evento</span>
+          </div>
+        </div>
+
+        <div class="form-body">
+          <div class="form-row">
+            <div class="form-group">
+              <label>Hora de Inicio *</label>
+              <input type="time" formControlName="startTime" class="modern-input" />
+            </div>
+            <div class="form-group">
+              <label>Hora de Fin</label>
+              <input type="time" formControlName="endTime" class="modern-input" />
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label>Estado</label>
+            <select formControlName="status" class="modern-select">
+              <option value="ACTIVE">Activo y Público</option>
+              <option value="SUSPENDED">Suspendido</option>
+              <option value="CANCELLED">Cancelado</option>
+            </select>
+          </div>
+        </div>
+      </div>
+
+      <!-- Tarjeta de Precio -->
+      <div class="form-card contact-info">
+        <div class="card-header">
+          <div class="icon-box success">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <line x1="12" y1="1" x2="12" y2="23"/>
+              <path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/>
+            </svg>
+          </div>
+          <div>
+            <h2>Precio</h2>
+            <span class="subtitle">Costo de entrada</span>
+          </div>
+        </div>
+
+        <div class="form-body">
+          <div class="form-row">
+            <div class="form-group">
+              <label>Precio Desde ($)</label>
+              <input type="number" formControlName="priceFrom" placeholder="0" class="modern-input" />
+            </div>
+            <div class="form-group">
+              <label>Precio Hasta ($)</label>
+              <input type="number" formControlName="priceTo" placeholder="50000" class="modern-input" />
+            </div>
+          </div>
+          <div class="form-group">
+            <label>Moneda</label>
+            <select formControlName="currency" class="modern-select">
+              <option value="COP">COP - Peso Colombiano</option>
+              <option value="USD">USD - Dólar</option>
+              <option value="EUR">EUR - Euro</option>
+            </select>
+          </div>
+        </div>
+      </div>
+
+      <!-- Tarjeta de Fotos -->
+      <div class="form-card photos-info">
+        <div class="card-header">
+          <div class="icon-box purple">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <rect x="3" y="3" width="18" height="18" rx="2" ry="2"/>
+              <circle cx="8.5" cy="8.5" r="1.5"/>
+              <polyline points="21,15 16,10 5,21"/>
+            </svg>
+          </div>
+          <div>
+            <h2>Galería de Fotos</h2>
+            <span class="subtitle">{{ photos().length }} / {{ maxPhotos() }} imágenes</span>
+          </div>
+        </div>
+
+        <div class="form-body">
+          <div 
+            class="drag-drop-zone upload-area" 
+            [class.drag-over]="isDragOver()"
+            (dragover)="onDragOver($event)"
+            (dragleave)="onDragLeave($event)"
+            (drop)="onDrop($event)"
+            (click)="fileInputEvents.click()">
+            <input type="file" #fileInputEvents hidden accept="image/*" (change)="onFileSelected($event)">
+            <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/>
+              <polyline points="17 8 12 3 7 8"/>
+              <line x1="12" y1="3" x2="12" y2="15"/>
+            </svg>
+            <p>Arrastra una imagen o haz clic para buscar</p>
+          </div>
+          <div style="margin-top: 1rem; display: flex; gap: 0.5rem;" *ngIf="false">
+            <input type="url" #photoInput placeholder="Pega la URL de la imagen..." class="modern-input" />
+            <button type="button" class="add-btn" (click)="addPhoto(photoInput.value); photoInput.value = ''">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <line x1="12" y1="5" x2="12" y2="19"/>
+                <line x1="5" y1="12" x2="19" y2="12"/>
+              </svg>
+            </button>
+          </div>
+
+          <div class="photos-grid">
+            <div class="photo-card" *ngFor="let photo of photos(); let i = index">
+              <img [src]="photo" alt="Foto del evento" />
+              <button type="button" class="remove-btn" (click)="removePhoto(i)">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <line x1="18" y1="6" x2="6" y2="18"/>
+                  <line x1="6" y1="6" x2="18" y2="18"/>
+                </svg>
+              </button>
+            </div>
+            <div class="photo-placeholder" *ngIf="photos().length === 0">
+              <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1">
+                <rect x="3" y="3" width="18" height="18" rx="2" ry="2"/>
+                <circle cx="8.5" cy="8.5" r="1.5"/>
+                <polyline points="21,15 16,10 5,21"/>
+              </svg>
+              <span>Agrega fotos de tu evento</span>
+            </div>
+          </div>
+        </div>
       </div>
     </div>
 
-    <form [formGroup]="form" (ngSubmit)="submit()">
-      <div class="wizard-warnings" *ngIf="error()">
-        <p class="error-msg">{{ error() }}</p>
-      </div>
+    <!-- Mensajes de Error/Éxito -->
+    <div class="alert error" *ngIf="error()">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <circle cx="12" cy="12" r="10"/>
+        <line x1="12" y1="8" x2="12" y2="12"/>
+        <line x1="12" y1="16" x2="12.01" y2="16"/>
+      </svg>
+      {{ error() }}
+    </div>
 
-      <!-- PASO 1: INFORMACIÓN BÁSICA -->
-      <section *ngIf="currentStep() === 1" class="wizard-step">
-        <h3>Información Básica</h3>
-        <label>Título del Evento *</label>
-        <input type="text" formControlName="title" placeholder="Ej: Concierto en la Playa" />
+    <div class="alert success" *ngIf="info()">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <path d="M22 11.08V12a10 10 0 11-5.93-9.14"/>
+        <polyline points="22,4 12,14.01 9,11.01"/>
+      </svg>
+      {{ info() }}
+    </div>
 
-        <div class="row">
-          <div class="col">
-            <label>Lugar Asociado (Sede) *</label>
-            <select formControlName="placeId">
-              <option value="">-- Selecciona --</option>
-              <option *ngFor="let place of places()" [value]="place.id">{{ place.name }}</option>
-            </select>
-          </div>
-          <div class="col">
-            <label>Categoría</label>
-            <select formControlName="categoryId">
-              <option value="">-- Selecciona --</option>
-              <option *ngFor="let cat of categories()" [value]="cat.id">{{ cat.name }}</option>
-            </select>
-          </div>
-        </div>
-
-        <label>Descripción</label>
-        <textarea formControlName="description" rows="4" placeholder="¿De qué trata este evento?"></textarea>
-      </section>
-
-      <!-- PASO 2: DETALLES, FECHA Y PRECIO -->
-      <section *ngIf="currentStep() === 2" class="wizard-step">
-        <h3>Fechas y Precios</h3>
-        
-        <div class="row">
-          <div class="col">
-            <label>Hora de Inicio *</label>
-            <input type="time" formControlName="startTime" />
-          </div>
-          <div class="col">
-            <label>Hora de Fin</label>
-            <input type="time" formControlName="endTime" />
-          </div>
-        </div>
-
-        <div class="row coords-row">
-          <div class="col">
-            <label>Precio Desde ($)</label>
-            <input type="number" formControlName="priceFrom" placeholder="0" />
-          </div>
-          <div class="col">
-            <label>Precio Hasta ($)</label>
-            <input type="number" formControlName="priceTo" placeholder="50000" />
-          </div>
-        </div>
-
-        <div class="row coords-row">
-          <div class="col">
-            <label>Edad Mínima</label>
-            <input type="number" formControlName="minAge" placeholder="18" />
-          </div>
-          <div class="col">
-            <label>Código de Vestimenta</label>
-            <input type="text" formControlName="dressCode" placeholder="Casual / Elegante" />
-          </div>
-        </div>
-      </section>
-
-      <!-- PASO 3: MULTIMEDIA Y ESTADO -->
-      <section *ngIf="currentStep() === 3" class="wizard-step">
-        <h3>Multimedia y Resumen</h3>
-        
-        <label>Estado del Evento</label>
-        <select formControlName="status">
-          <option value="ACTIVE">Activo y Público</option>
-          <option value="SUSPENDED">Suspendido</option>
-          <option value="CANCELLED">Cancelado</option>
-        </select>
-
-        <hr />
-        
-        <div class="media-section">
-          <h3>Galería del Evento <span class="badge">{{ photos().length }} / {{ maxPhotos() }}</span></h3>
-          <p class="plan-info">Tu plan permite hasta {{ maxPhotos() }} fotos para este evento.</p>
-          
-          <div class="add-photo-bar">
-            <input type="url" #photoInput placeholder="https://unsplash.com/.../evento.jpg" />
-            <button type="button" class="btn-dark" (click)="addPhoto(photoInput.value); photoInput.value = ''">Añadir URL</button>
-          </div>
-
-          <div class="photos-preview-grid">
-            <div class="photo-item" *ngFor="let photo of photos(); let i = index">
-              <img [src]="photo" alt="Evento Preview" />
-              <button type="button" class="btn-remove" (click)="removePhoto(i)">✕</button>
-            </div>
-            <div class="photo-placeholder" *ngIf="photos().length === 0">
-              🖼️ Sin imágenes
-            </div>
-          </div>
-        </div>
-
-      </section>
-
-      <div class="wizard-footer">
-        <button type="button" class="btn-light" *ngIf="currentStep() > 1" (click)="prevStep()">Volver</button>
-        <button type="button" class="btn-main ml-auto" *ngIf="currentStep() < totalSteps" (click)="nextStep()">Siguiente</button>
-        <button type="submit" class="btn-success ml-auto" *ngIf="currentStep() === totalSteps">Publicar Evento</button>
-      </div>
-      
-      <div class="success-banner" *ngIf="info()">
-        🎉 {{ info() }}
-      </div>
-    </form>
-  </div>
+    <!-- Acciones -->
+    <div class="form-actions">
+      <button type="button" class="btn-secondary" routerLink="/">
+        Cancelar
+      </button>
+      <button type="submit" class="btn-primary" [disabled]="loading() || form.invalid">
+        <span *ngIf="!loading()">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M19 21H5a2 2 0 01-2-2V5a2 2 0 012-2h11l5 5v11a2 2 0 01-2 2z"/>
+            <polyline points="17,21 17,13 7,13 7,21"/>
+            <polyline points="7,3 7,8 15,8"/>
+          </svg>
+          Crear Evento
+        </span>
+        <span *ngIf="loading()" class="loading">
+          <span class="spinner"></span>
+          Creando evento...
+        </span>
+      </button>
+    </div>
+  </form>
 </div>
