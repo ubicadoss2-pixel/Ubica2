@@ -11,12 +11,15 @@
   --surface-card: #ffffff;
   --surface-soft: #f1f5f9;
   
-  --identity-glow: #6366f1;
-  --identity-glow-hover: #4f46e5;
-  --identity-surface: #eef2ff;
+  --identity-glow: #bf00ff; /* Neon Purple */
+  --identity-glow-hover: #d400ff;
+  --identity-surface: rgba(191, 0, 255, 0.1);
 
-  --border-quiet: rgba(0, 0, 0, 0.08);
-  --border-active: var(--identity-glow);
+  /* Neon Specialized Tokens */
+  --neon-purple: #bf00ff;
+  --neon-pink: #ff00ff;
+  --neon-blue: #00d4ff;
+  --neon-glow: 0 0 15px rgba(191, 0, 255, 0.5);
   
   --radius-sm: 8px;
   --radius-md: 12px;
@@ -34,39 +37,41 @@
 
 [data-theme="dark"] {
   --ink-primary: #f8fafc;
-  --ink-secondary: #94a3b8;
-  --ink-muted: #64748b;
+  --ink-secondary: #cbd5e1;
+  --ink-muted: #94a3b8;
   --ink-on-primary: #ffffff;
 
-  --surface-main: #0f172a;
-  --surface-card: #1e293b;
-  --surface-soft: #334155;
+  --surface-main: #050508; /* Deepest Night */
+  --surface-card: rgba(15, 23, 42, 0.7); /* Glassy Card */
+  --surface-soft: rgba(30, 41, 59, 0.5);
   
-  --identity-glow: #818cf8;
-  --identity-glow-hover: #6366f1;
-  --identity-surface: rgba(99, 102, 241, 0.15);
+  --identity-glow: #bf00ff;
+  --identity-glow-hover: #d400ff;
+  --identity-surface: rgba(191, 0, 255, 0.2);
 
-  --border-quiet: rgba(255, 255, 255, 0.12);
-  --shadow-md: 0 10px 20px -5px rgba(0, 0, 0, 0.4);
+  --border-quiet: rgba(191, 0, 255, 0.15);
+  --shadow-md: 0 0 20px rgba(191, 0, 255, 0.1);
 
   /* Extended dark theme variables */
-  --bg-primary: #0f172a;
-  --bg-secondary: #1e293b;
-  --bg-card: #1e293b;
-  --bg-input: #334155;
-  --bg-hover: #334155;
-  --text-primary: #f8fafc;
-  --text-secondary: #94a3b8;
-  --text-muted: #64748b;
+  --bg-primary: #050508;
+  --bg-secondary: #0f172a;
+  --bg-card: rgba(30, 41, 59, 0.7);
+  --bg-input: rgba(15, 23, 42, 0.8);
+  --bg-hover: rgba(191, 0, 255, 0.1);
+  --text-primary: #ffffff;
+  --text-secondary: #cbd5e1;
+  --text-muted: #94a3b8;
   --text-placeholder: #64748b;
-  --border-color: #334155;
-  --border-light: #475569;
-  --success-bg: rgba(16, 185, 129, 0.15);
-  --success-text: #34d399;
-  --error-bg: rgba(239, 68, 68, 0.15);
-  --error-text: #f87171;
-  --warning-bg: rgba(245, 158, 11, 0.15);
-  --warning-text: #fbbf24;
+  --border-color: rgba(191, 0, 255, 0.2);
+  --border-light: rgba(191, 0, 255, 0.3);
+  --success-bg: rgba(0, 255, 127, 0.1);
+  --success-text: #00ff7f;
+  --error-bg: rgba(255, 0, 127, 0.1);
+  --error-text: #ff007f;
+  --warning-bg: rgba(255, 215, 0, 0.1);
+  --warning-text: #ffd700;
+
+  backdrop-filter: blur(10px);
 }
 
 [data-theme="light"] {
@@ -131,16 +136,18 @@ button, input, select, textarea {
   border: 1px solid var(--border-quiet);
   box-shadow: var(--shadow-md);
   padding: 1.5rem;
-  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+  transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+  backdrop-filter: blur(12px);
   
   &:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 15px 30px -5px rgba(0, 0, 0, 0.1);
+    transform: translateY(-4px);
+    border-color: var(--neon-purple);
+    box-shadow: 0 0 25px rgba(191, 0, 255, 0.2);
   }
 }
 
 .btn-primary {
-  background-color: var(--identity-glow);
+  background: linear-gradient(135deg, var(--neon-purple), var(--neon-pink));
   color: #fff;
   border: none;
   padding: 0.75rem 1.5rem;
@@ -152,11 +159,13 @@ button, input, select, textarea {
   justify-content: center;
   gap: 0.5rem;
   font-family: var(--font-sans);
-  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+  transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+  box-shadow: 0 0 10px rgba(191, 0, 255, 0.3);
   
   &:hover {
-    background-color: var(--identity-glow-hover);
-    transform: translateY(-1px);
+    transform: translateY(-2px);
+    box-shadow: 0 0 20px rgba(191, 0, 255, 0.6);
+    filter: brightness(1.1);
   }
   
   &:active {
@@ -184,6 +193,17 @@ button, input, select, textarea {
   from {
     opacity: 0;
     transform: translateY(6px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes fadeInDown {
+  from {
+    opacity: 0;
+    transform: translateY(-20px);
   }
   to {
     opacity: 1;

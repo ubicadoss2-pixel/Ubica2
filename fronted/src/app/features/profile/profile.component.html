@@ -2,7 +2,7 @@
   
   <section class="profile-header">
     <div class="avatar-section">
-      <img [src]="profile()?.avatarUrl || 'https://via.placeholder.com/100'" alt="Avatar" class="avatar" />
+      <img [src]="(profile()?.avatarUrl && profile()!.avatarUrl!.length > 50) ? profile()!.avatarUrl : 'https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?auto=format&fit=crop&q=80&w=200&h=200'" alt="Avatar" class="avatar" />
       <div class="avatar-edit">
         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
           <path d="M23 19a2 2 0 01-2 2H3a2 2 0 01-2-2V8a2 2 0 012-2h4l2-3h6l2 3h4a2 2 0 012 2z"/>
@@ -270,6 +270,27 @@
         </section>
       </ng-container>
 
+    </div>
+    <!-- Achievements Section -->
+    <div class="achievements-section">
+      <div class="section-header">
+        <h3>🏆 Mis Logros de Neón</h3>
+        <p>Gana insignias explorando los mejores lugares de la ciudad.</p>
+      </div>
+
+      <div class="achievements-grid">
+        <div class="achievement-card" *ngFor="let ach of achievements()" [class.locked]="!ach.unlocked">
+          <div class="ach-icon">{{ ach.icon }}</div>
+          <div class="ach-info">
+            <h4>{{ ach.title }}</h4>
+            <p>{{ ach.description }}</p>
+            <div class="progress-bar">
+              <div class="progress-fill" [style.width.%]="ach.progress"></div>
+            </div>
+          </div>
+          <div class="ach-status" *ngIf="ach.unlocked">✅</div>
+        </div>
+      </div>
     </div>
   </div>
 </div>

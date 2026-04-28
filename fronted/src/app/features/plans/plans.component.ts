@@ -4,6 +4,7 @@ import { Router, RouterLink } from '@angular/router';
 import { AuthStoreService } from '../../core/services/auth-store.service';
 import { Plan, PlansService, UserPlan } from '../../core/services/plans.service';
 import { PlanFavoritesService } from '../../core/services/plan-favorites.service';
+import { timeout } from 'rxjs/operators';
 
 @Component({
   selector: 'app-plans',
@@ -26,9 +27,19 @@ export class PlansComponent implements OnInit {
   readonly favoriteIds = signal<Set<string>>(new Set());
 
   ngOnInit(): void {
-    this.plansService.getPlans().subscribe({
+    this.plansService.getPlans()
+    .pipe(timeout(2000))
+    .subscribe({
       next: (plans) => this.plans.set(plans),
-      error: () => this.error.set('No se pudo cargar los planes.'),
+      error: () => {
+        // Fallback offline neon premium
+        const mockPlans: Plan[] = [
+          { id: 'plan-base', name: 'Start', price: 0, durationDays: 30, limitPlaces: 1, limitEvents: 2, isActive: true },
+          { id: 'plan-pro', name: 'Pro Neon', price: 50000, durationDays: 30, limitPlaces: 5, limitEvents: 10, isActive: true },
+          { id: 'plan-ultra', name: 'Ultra Glow', price: 120000, durationDays: 30, limitPlaces: 20, limitEvents: 50, isActive: true }
+        ];
+        this.plans.set(mockPlans);
+      },
     });
 
     if (this.auth.isAuthenticated()) {

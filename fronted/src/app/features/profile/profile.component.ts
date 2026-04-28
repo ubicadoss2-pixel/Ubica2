@@ -26,6 +26,13 @@ export class ProfileComponent implements OnInit {
   readonly success = signal<string | null>(null);
   readonly isDragOver = signal(false);
 
+  readonly achievements = signal([
+    { id: 1, title: 'Explorador Nocturno', description: 'Visita 5 bares o discotecas.', icon: '🌙', progress: 80, unlocked: false },
+    { id: 2, title: 'Gourmet de Neón', description: 'Deja 3 reseñas en restaurantes.', icon: '🍣', progress: 100, unlocked: true },
+    { id: 3, title: 'Local Hero', description: 'Añade 10 lugares a tus favoritos.', icon: '🛡️', progress: 40, unlocked: false },
+    { id: 4, title: 'Cazador de Ofertas', description: 'Usa tu primera promoción flash.', icon: '⚡', progress: 100, unlocked: true }
+  ]);
+
   readonly isOwner = computed(() => {
     const fromAuth = this.authStore.hasRole('OWNER', 'ADMIN');
     const fromProfile = this.profile()?.userRoles?.some(ur => ur.role.code === 'OWNER' || ur.role.code === 'ADMIN');
@@ -100,13 +107,41 @@ export class ProfileComponent implements OnInit {
 
     const reader = new FileReader();
     reader.onload = (e) => {
-      const base64Url = e.target?.result as string;
-      this.form.patchValue({ avatarUrl: base64Url });
-      
-      const current = this.profile();
-      if (current) {
-        this.profile.set({ ...current, avatarUrl: base64Url });
-      }
+      const img = new Image();
+      img.onload = () => {
+        const canvas = document.createElement('canvas');
+        const MAX_WIDTH = 400;
+        const MAX_HEIGHT = 400;
+        let width = img.width;
+        let height = img.height;
+
+        if (width > height) {
+          if (width > MAX_WIDTH) {
+            height *= MAX_WIDTH / width;
+            width = MAX_WIDTH;
+          }
+        } else {
+          if (height > MAX_HEIGHT) {
+            width *= MAX_HEIGHT / height;
+            height = MAX_HEIGHT;
+          }
+        }
+
+        canvas.width = width;
+        canvas.height = height;
+        const ctx = canvas.getContext('2d');
+        ctx?.drawImage(img, 0, 0, width, height);
+
+        // Convertir a JPEG comprimido para no saturar localStorage
+        const base64Url = canvas.toDataURL('image/jpeg', 0.8);
+        this.form.patchValue({ avatarUrl: base64Url });
+        
+        const current = this.profile();
+        if (current) {
+          this.profile.set({ ...current, avatarUrl: base64Url });
+        }
+      };
+      img.src = e.target?.result as string;
     };
     reader.onerror = () => {
       this.error.set('Error al leer la imagen.');

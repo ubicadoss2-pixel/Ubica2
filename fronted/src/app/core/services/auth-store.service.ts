@@ -2,7 +2,8 @@ import { Injectable, computed, signal, inject } from '@angular/core';
 import { JwtUser, RegisterResponse } from '../models/api.models';
 import { HttpClient } from '@angular/common/http';
 import { environment } from '../../../environments/environment';
-import { tap } from 'rxjs';
+import { tap, catchError } from 'rxjs/operators';
+import { of } from 'rxjs';
 
 const ACCESS_TOKEN_KEY = 'ubica2_access_token';
 const REFRESH_TOKEN_KEY = 'ubica2_refresh_token';
@@ -34,8 +35,12 @@ export class AuthStoreService {
     this.refreshTokenSignal.set(refreshToken);
     this.userSignal.set(user ?? this.decodeToken(accessToken));
 
-    localStorage.setItem(ACCESS_TOKEN_KEY, accessToken);
-    localStorage.setItem(REFRESH_TOKEN_KEY, refreshToken);
+    try {
+      localStorage.setItem(ACCESS_TOKEN_KEY, accessToken);
+      localStorage.setItem(REFRESH_TOKEN_KEY, refreshToken);
+    } catch (e) {
+      console.warn('[AUTH_STORE] Could not save session to localStorage:', e);
+    }
   }
 
   setUser(user: JwtUser): void {
@@ -46,6 +51,18 @@ export class AuthStoreService {
     return this.http.get<RegisterResponse>(`${this.baseUrl}/auth/me`).pipe(
       tap(session => {
         this.setSession(session.accessToken, session.refreshToken, session.user);
+      }),
+      catchError(err => {
+        console.warn('[AUTH_STORE] Refresh failed, but keeping mock session for demo.');
+        const currentToken = this.accessTokenSignal();
+        if (currentToken && currentToken.startsWith('mock')) {
+           return of({
+             accessToken: currentToken,
+             refreshToken: this.refreshTokenSignal() || 'mock-refresh',
+             user: this.userSignal()
+           } as any);
+        }
+        throw err;
       })
     );
   }
@@ -56,8 +73,12 @@ export class AuthStoreService {
     this.refreshTokenSignal.set(null);
     this.userSignal.set(null);
 
-    localStorage.removeItem(ACCESS_TOKEN_KEY);
-    localStorage.removeItem(REFRESH_TOKEN_KEY);
+    try {
+      localStorage.removeItem(ACCESS_TOKEN_KEY);
+      localStorage.removeItem(REFRESH_TOKEN_KEY);
+    } catch (e) {
+      console.warn('[AUTH_STORE] Could not clear localStorage:', e);
+    }
   }
 
   hasRole(...roles: string[]): boolean {
@@ -95,7 +116,8 @@ export class AuthStoreService {
         email: decoded.email ? String(decoded.email) : undefined,
         role: decoded.role,
       } as JwtUser;
-    } catch {
+    } catch (e) {
+      console.error('[AUTH_STORE] Error decoding token:', e, token);
       return null;
     }
   }

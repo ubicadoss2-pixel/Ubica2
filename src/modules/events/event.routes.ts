@@ -5,7 +5,7 @@ import { agenda, create, getById, listByPlace, update } from "./event.controller
 
 const router = Router();
 
-router.get("/agenda", authMiddleware, agenda);
+router.get("/agenda", agenda);
 router.get("/place/:placeId", listByPlace);
 router.get("/:id", getById);
 

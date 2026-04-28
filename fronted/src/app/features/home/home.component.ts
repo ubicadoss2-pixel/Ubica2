@@ -2,7 +2,7 @@ import { CommonModule } from '@angular/common';
 import { Component, effect, inject, signal, OnInit } from '@angular/core';
 import { FormBuilder, ReactiveFormsModule } from '@angular/forms';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
-import { finalize } from 'rxjs/operators';
+import { finalize, timeout } from 'rxjs/operators';
 import { City, Place } from '../../core/models/api.models';
 import { AnalyticsService } from '../../core/services/analytics.service';
 import { AuthStoreService } from '../../core/services/auth-store.service';
@@ -10,6 +10,7 @@ import { CatalogsService } from '../../core/services/catalogs.service';
 import { FavoritesService } from '../../core/services/favorites.service';
 import { PlacesService } from '../../core/services/places.service';
 import { AppStateService } from '../../core/services/app-state.service';
+import { NotificationService } from '../../core/services/notification.service';
 import { TranslatePipe } from '../../core/pipes/translate.pipe';
 import * as L from 'leaflet';
 import 'leaflet-routing-machine';
@@ -29,6 +30,7 @@ export class HomeComponent implements OnInit {
   private readonly analyticsService = inject(AnalyticsService);
   private readonly appState = inject(AppStateService);
   readonly authStore = inject(AuthStoreService);
+  private readonly notificationService = inject(NotificationService);
 
   readonly cities = signal<City[]>([]);
   readonly placeTypes = signal<Array<{ id: string; name: string }>>([]);
@@ -37,6 +39,8 @@ export class HomeComponent implements OnInit {
   readonly error = signal<string | null>(null);
   readonly success = signal<string | null>(null);
   readonly favoriteIds = signal<Set<string>>(new Set());
+  readonly recommendations = signal<Place[]>([]);
+  readonly showHeatmap = signal(false);
 
   readonly form = this.fb.nonNullable.group({
     search: '',
@@ -55,6 +59,8 @@ export class HomeComponent implements OnInit {
   private userLocationMarker?: L.Marker;
   private routingControl?: any;
   private searchMarker?: L.Marker;
+  private heatmapLayer?: L.LayerGroup;
+  private promoShown = false;
   private readonly router = inject(Router);
   private readonly route = inject(ActivatedRoute);
 
@@ -79,13 +85,49 @@ export class HomeComponent implements OnInit {
       this.loadFavorites();
     }
 
-    this.checkQueryParams();
+    this.route.queryParamMap.subscribe(params => {
+      this.handleNavigationParams(params);
+    });
+
+    this.demoFlashPromo();
 
     this.router.events.subscribe(() => {
       this.loadPlaces();
-      this.loadFavorites();
-      this.checkQueryParams();
+      if (this.authStore.hasRole('USER')) {
+        this.loadFavorites();
+      }
     });
+  }
+
+  private handleNavigationParams(params: any): void {
+    const lat = params.get('lat');
+    const lng = params.get('lng');
+    const placeId = params.get('placeId');
+
+    if (lat && lng && this.map) {
+      this.map.setView([Number(lat), Number(lng)], 16);
+      
+      if (placeId) {
+        // Wait for markers and places to be ready
+        setTimeout(() => {
+          const targetPlace = this.allPlaces.find(p => p.id === placeId);
+          if (targetPlace) {
+             this.routeTo(targetPlace);
+             this.map?.setView([Number(lat), Number(lng)], 17);
+          }
+          
+          if (!this.markersLayer) return;
+          this.markersLayer.eachLayer((layer: any) => {
+            if (layer instanceof L.Marker) {
+              const ll = layer.getLatLng();
+              if (Math.abs(ll.lat - Number(lat)) < 0.001 && Math.abs(ll.lng - Number(lng)) < 0.001) {
+                layer.openPopup();
+              }
+            }
+          });
+        }, 1000);
+      }
+    }
   }
 
   reloadData(): void {
@@ -96,32 +138,9 @@ export class HomeComponent implements OnInit {
     }
   }
 
-  private checkQueryParams(): void {
-    const params = this.route.snapshot.queryParams;
-    if (params['lat'] && params['lng'] && this.map) {
-      const lat = Number(params['lat']);
-      const lng = Number(params['lng']);
-      const placeId = params['placeId'];
 
-      if (!isNaN(lat) && !isNaN(lng)) {
-        this.map.setView([lat, lng], 15);
-        
-        if (placeId) {
-          // Open popup for this specific place
-          setTimeout(() => {
-            if (!this.markersLayer) return;
-            this.markersLayer.eachLayer((layer: any) => {
-              if (layer instanceof L.Marker) {
-                const ll = layer.getLatLng();
-                if (Math.abs(ll.lat - lat) < 0.0001 && Math.abs(ll.lng - lng) < 0.0001) {
-                  layer.openPopup();
-                }
-              }
-            });
-          }, 500);
-        }
-      }
-    }
+  private checkQueryParams(): void {
+    // This is now handled reactively by handleNavigationParams
   }
 
   ngAfterViewInit(): void {
@@ -132,30 +151,42 @@ export class HomeComponent implements OnInit {
     // Default center in Armenia, Colombia
     const defaultCenter: L.LatLngExpression = [4.5401, -75.6657];
     
-    const satellite = L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', {
-      attribution: 'Tiles &copy; Esri &mdash; Source: Esri, i-cubed, USDA, USGS, AEX, GeoEye, Getmapping, Aerogrid, IGN, IGP, UPR-EGP, and the GIS User Community'
+    // Light tiles (Google Maps style)
+    const lightMap = L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png', {
+      attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors &copy; <a href="https://carto.com/attributions">CARTO</a>',
+      subdomains: 'abcd',
+      maxZoom: 20
+    });
+    
+    const standardOSM = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+      attribution: '&copy; OpenStreetMap contributors'
     });
 
-    const streets = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-      attribution: '&copy; OpenStreetMap contributors'
+    const satellite = L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', {
+      attribution: 'Tiles &copy; Esri &mdash; Source: Esri, i-cubed, USDA, USGS, AEX, GeoEye, Getmapping, Aerogrid, IGN, IGP, UPR-EGP, and the GIS User Community'
     });
 
     this.map = L.map('map', {
       center: defaultCenter,
       zoom: 13,
-      layers: [satellite]
+      layers: [lightMap],
+      zoomControl: false 
     });
 
+    // Add zoom control at bottom right
+    L.control.zoom({ position: 'bottomright' }).addTo(this.map);
+
     const baseMaps = {
-      "Satélite (Earth)": satellite,
-      "Calles": streets
+      "Mapa Claro": lightMap,
+      "Clásico (OSM)": standardOSM,
+      "Satélite (Tierra)": satellite,
     };
 
-    L.control.layers(baseMaps).addTo(this.map);
+    L.control.layers(baseMaps, undefined, { position: 'topright' }).addTo(this.map);
 
-    setTimeout(() => {
-      this.map?.invalidateSize();
-    }, 100);
+    this.heatmapLayer = L.layerGroup();
+    // No lo añadimos al mapa por defecto, solo si el usuario lo activa
+
 
     this.markersLayer = L.layerGroup().addTo(this.map);
 
@@ -213,35 +244,45 @@ export class HomeComponent implements OnInit {
         
         const customIcon = L.divIcon({
           className: 'custom-photo-marker',
-          html: `<div class="marker-photo" style="background-image: url('${imageUrl}'); width: 40px; height: 40px; border: 2px solid white; border-radius: 50%; box-shadow: 0 4px 6px rgba(0,0,0,0.3);"></div>`,
-          iconSize: [40, 40],
-          iconAnchor: [20, 20]
+          html: `
+            <div class="marker-container">
+              <div class="marker-glow"></div>
+              <div class="marker-photo" style="background-image: url('${imageUrl}');"></div>
+              <div class="marker-pin"></div>
+            </div>
+          `,
+          iconSize: [46, 46],
+          iconAnchor: [23, 46],
+          popupAnchor: [0, -40]
         });
 
         const photoMarker = L.marker([pLat, pLng], { icon: customIcon });
 
         const popupContent = document.createElement('div');
-        popupContent.className = 'custom-popup';
-        popupContent.style.textAlign = 'center';
+        popupContent.className = 'modern-popup';
         popupContent.innerHTML = `
-          <h3 style="margin:0 0 5px 0; font-size:1.1rem; color:#333;">${place.name}</h3>
-          <span style="font-size:0.85rem; color:#777;">${place.city?.name || ''}</span>
-          <p style="margin:5px 0; font-size:0.9rem;">${place.description ? place.description.substring(0, 60) + '...' : ''}</p>
+          <div class="popup-image" style="background-image: url('${imageUrl}');"></div>
+          <div class="popup-body">
+            <span class="popup-badge">${place.placeType?.name || 'LUGAR'}</span>
+            <h3>${place.name}</h3>
+            <p>${place.description ? place.description.substring(0, 80) + '...' : 'Sin descripción'}</p>
+            <div class="popup-actions">
+              <button class="btn-route-action">📍 Ir ahora</button>
+              <button class="btn-detail-action">✨ Ver más</button>
+            </div>
+          </div>
         `;
         
-        const routeBtn = document.createElement('button');
-        routeBtn.innerText = '📍 Cómo llegar';
-        routeBtn.style.cssText = 'width: 100%; padding: 8px; margin-top: 10px; background-color: #4f46e5; color: white; border: none; border-radius: 6px; cursor: pointer; font-weight: bold; font-family: inherit;';
+        const routeBtn = popupContent.querySelector('.btn-route-action') as HTMLButtonElement;
         routeBtn.onclick = () => this.routeTo(place);
-        popupContent.appendChild(routeBtn);
 
-        const detailsBtn = document.createElement('button');
-        detailsBtn.innerText = '👁️ Ver detalles';
-        detailsBtn.style.cssText = 'width: 100%; padding: 8px; margin-top: 5px; background-color: #fff; color: #4f46e5; border: 1px solid #4f46e5; border-radius: 6px; cursor: pointer; font-weight: bold; font-family: inherit;';
+        const detailsBtn = popupContent.querySelector('.btn-detail-action') as HTMLButtonElement;
         detailsBtn.onclick = () => this.router.navigate(['/places', place.id]);
-        popupContent.appendChild(detailsBtn);
 
-        photoMarker.bindPopup(popupContent);
+        photoMarker.bindPopup(popupContent, {
+          closeButton: false,
+          className: 'modern-leaflet-popup'
+        });
         this.markersLayer!.addLayer(photoMarker);
         markers.push(photoMarker);
         
@@ -254,8 +295,8 @@ export class HomeComponent implements OnInit {
     console.log(`[DEBUG_MARKER] Total markers added: ${markers.length}`);
 
 
-    if (markers.length > 0) {
-      // Only fit bounds if we have actual markers with non-zero coordinates
+    if (markers.length > 0 && !this.route.snapshot.queryParams['placeId']) {
+      // Only fit bounds if we are NOT focusing on a specific place via query params
       const validMarkers = markers.filter(m => {
         const ll = m.getLatLng();
         return ll.lat !== 0 || ll.lng !== 0;
@@ -389,6 +430,73 @@ export class HomeComponent implements OnInit {
     this.loadPlaces();
   }
 
+  toggleHeatmap(): void {
+    if (!this.map || !this.heatmapLayer) return;
+    this.showHeatmap.update(v => !v);
+    
+    if (this.showHeatmap()) {
+      this.updateHeatmap();
+      this.heatmapLayer.addTo(this.map);
+    } else {
+      this.heatmapLayer.remove();
+    }
+  }
+
+  private updateHeatmap(): void {
+    if (!this.heatmapLayer) return;
+    this.heatmapLayer.clearLayers();
+
+    const currentPlaces = this.places();
+    // Simulate heat by adding large translucent circles with blur effect
+    currentPlaces.forEach(p => {
+      if (p.latitude && p.longitude) {
+        const circle = L.circle([Number(p.latitude), Number(p.longitude)], {
+          radius: 500,
+          fillColor: '#bf00ff',
+          fillOpacity: 0.15,
+          color: '#ff00ff',
+          weight: 1,
+          className: 'heatmap-circle'
+        });
+        this.heatmapLayer?.addLayer(circle);
+      }
+    });
+  }
+
+  private demoFlashPromo(): void {
+    if (this.promoShown) return;
+    this.promoShown = true;
+    
+    setTimeout(() => {
+      this.notificationService.show({
+        type: 'promo',
+        title: '¡Promoción Relámpago! 🔥',
+        message: 'Happy Hour clandestino en "El Bunker". 2x1 en toda la coctelería de autor. ¡Toca aquí para ver!',
+        duration: 15000,
+        link: '/place-detail/mock-real-bunker'
+      });
+    }, 5000);
+  }
+
+  private updateRecommendations(): void {
+    const now = new Date();
+    const hour = now.getHours();
+    let recommended: Place[] = [];
+
+    if (hour >= 6 && hour < 12) {
+      // Morning: Coffee/Breakfast
+      recommended = this.allPlaces.filter(p => p.placeType?.name?.toLowerCase().includes('café') || p.name.toLowerCase().includes('solar'));
+    } else if (hour >= 12 && hour < 18) {
+      // Afternoon: Restaurants/Gastrobar
+      recommended = this.allPlaces.filter(p => p.placeType?.name?.toLowerCase().includes('restaurante') || p.placeType?.name?.toLowerCase().includes('gastrobar'));
+    } else {
+      // Evening/Night: Bars/Discos
+      recommended = this.allPlaces.filter(p => p.placeType?.name?.toLowerCase().includes('disco') || p.placeType?.name?.toLowerCase().includes('bar'));
+    }
+
+    this.recommendations.set(recommended.slice(0, 4));
+  }
+
   goToMyLocation(): void {
     this.error.set(null);
     if (!this.userLocationMarker || !this.map) {
@@ -459,15 +567,100 @@ export class HomeComponent implements OnInit {
 
     this.placesService
       .list(this.form.getRawValue())
-      .pipe(finalize(() => this.loading.set(false)))
+      .pipe(
+        timeout(2000),
+        finalize(() => this.loading.set(false))
+      )
       .subscribe({
         next: (response) => {
-          console.log('[API] Received places:', response.items.length);
-          this.allPlaces = response.items;
+          // Filter out Bogota as requested by user
+          const filteredResponseItems = response.items.filter(p => 
+            p.city?.name?.toLowerCase() !== 'bogota'
+          );
+          
+          // Inject photos and mock places for Armenia
+          const processedItems = filteredResponseItems.map(place => {
+            const lowerName = (place.name || '').toLowerCase().trim();
+            if (!place.photos || place.photos.length === 0) {
+              if (lowerName.includes('museo del oro')) {
+                return { ...place, photos: [{ url: 'https://arquitecturapanamericana.com/wp-content/uploads/2016/10/Salmona-1.jpg' }] as any };
+              }
+              if (lowerName.includes('parque de la vida')) {
+                return { ...place, photos: [{ url: 'https://images.unsplash.com/photo-1542332213-9b5a5a3fab35?auto=format&fit=crop&w=800&q=60' }] as any };
+              }
+            }
+            return place;
+          });
+
+          // Add 3 REAL iconic places for Armenia
+          const armeniaMocks: any[] = [
+            {
+              id: 'mock-real-1',
+              name: 'Restaurante La Fogata',
+              description: 'El restaurante más icónico de Armenia. Excelencia en parrillada, cocina internacional y una cava de vinos y cocteles inigualable.',
+              city: { name: 'Armenia' },
+              placeType: { name: 'Restaurante' },
+              priceLevel: 5,
+              photos: [{ url: 'https://images.unsplash.com/photo-1544148103-0773bf10d330?auto=format&fit=crop&w=800&q=60' }],
+              latitude: 4.5512,
+              longitude: -75.6598
+            },
+            {
+              id: 'mock-real-2',
+              name: 'El Solar Gastrobar',
+              description: 'Ambiente rústico y moderno en el norte de Armenia. Famoso por sus platos para compartir y coctelería experimental.',
+              city: { name: 'Armenia' },
+              placeType: { name: 'Gastrobar' },
+              priceLevel: 3,
+              photos: [{ url: 'https://images.unsplash.com/photo-1470337458703-46ad1756a187?auto=format&fit=crop&w=800&q=60' }],
+              latitude: 4.5495,
+              longitude: -75.6631
+            },
+            {
+              id: 'mock-real-3',
+              name: 'Dar Papaya',
+              description: 'El epicentro de la rumba y los mejores cocteles en la Avenida Bolívar. Un clásico imperdible de la noche quindiana.',
+              city: { name: 'Armenia' },
+              placeType: { name: 'Discoteca/Bar' },
+              priceLevel: 3,
+              photos: [{ url: 'https://images.unsplash.com/photo-1572116469696-31de0f17cc34?auto=format&fit=crop&w=800&q=60' }],
+              latitude: 4.5540,
+              longitude: -75.6580
+            },
+            {
+              id: 'mock-real-bunker',
+              name: 'El Bunker',
+              description: 'Experiencia clandestina en el corazón de Armenia. Coctelería de autor y ambiente industrial con toques de neón.',
+              city: { name: 'Armenia' },
+              placeType: { name: 'Bar/Gastrobar' },
+              priceLevel: 4,
+              photos: [{ url: 'https://images.unsplash.com/photo-1514362545857-3bc16c4c7d1b?auto=format&fit=crop&w=800&q=60' }],
+              latitude: 4.5450,
+              longitude: -75.6680
+            }
+          ];
+
+          this.allPlaces = [...processedItems, ...armeniaMocks];
           this.applyDistanceFilter();
           this.updateMarkers();
+          this.updateRecommendations();
+          if (this.showHeatmap()) this.updateHeatmap();
         },
-        error: (err) => this.error.set(err?.error?.message ?? 'No se pudo cargar lugares.'),
+        error: (err) => {
+          this.error.set(err?.error?.message ?? 'Modo offline: Mostrando lugares destacados.');
+          
+          const armeniaMocks: any[] = [
+            { id: 'mock-real-1', name: 'Restaurante La Fogata', description: 'El restaurante más icónico de Armenia... (Offline)', city: { name: 'Armenia' }, placeType: { name: 'Restaurante' }, priceLevel: 5, photos: [{ url: 'https://images.unsplash.com/photo-1544148103-0773bf10d330?auto=format&fit=crop&w=800&q=60' }], latitude: 4.5512, longitude: -75.6598 },
+            { id: 'mock-real-2', name: 'El Solar Gastrobar', description: 'Ambiente rústico y moderno... (Offline)', city: { name: 'Armenia' }, placeType: { name: 'Gastrobar' }, priceLevel: 3, photos: [{ url: 'https://images.unsplash.com/photo-1470337458703-46ad1756a187?auto=format&fit=crop&w=800&q=60' }], latitude: 4.5495, longitude: -75.6631 },
+            { id: 'mock-real-3', name: 'Dar Papaya', description: 'El epicentro de la rumba... (Offline)', city: { name: 'Armenia' }, placeType: { name: 'Discoteca/Bar' }, priceLevel: 3, photos: [{ url: 'https://images.unsplash.com/photo-1572116469696-31de0f17cc34?auto=format&fit=crop&w=800&q=60' }], latitude: 4.5540, longitude: -75.6580 },
+            { id: 'mock-real-bunker', name: 'El Bunker', description: 'Experiencia clandestina... (Offline)', city: { name: 'Armenia' }, placeType: { name: 'Bar/Gastrobar' }, priceLevel: 4, photos: [{ url: 'https://images.unsplash.com/photo-1514362545857-3bc16c4c7d1b?auto=format&fit=crop&w=800&q=60' }], latitude: 4.5450, longitude: -75.6680 },
+            { id: 'mock-real-4', name: 'Museo del Oro Quimbaya', description: 'Un museo espectacular diseñado por Rogelio Salmona. (Offline)', city: { name: 'Armenia' }, placeType: { name: 'Museo' }, priceLevel: 2, photos: [{ url: 'https://arquitecturapanamericana.com/wp-content/uploads/2016/10/Salmona-1.jpg' }], latitude: 4.5501, longitude: -75.6606 }
+          ];
+
+          this.allPlaces = armeniaMocks;
+          this.applyDistanceFilter();
+          this.updateMarkers();
+        }
       });
   }
 

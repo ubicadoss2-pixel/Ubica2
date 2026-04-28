@@ -5,6 +5,7 @@ import { PromotionsService } from '../../core/services/promotions.service';
 import { PlanFavoritesService } from '../../core/services/plan-favorites.service';
 import { AuthStoreService } from '../../core/services/auth-store.service';
 import { Promotion } from '../../core/models/feature.models';
+import { timeout } from 'rxjs/operators';
 
 @Component({
   selector: 'app-promotions',
@@ -54,14 +55,10 @@ import { Promotion } from '../../core/models/feature.models';
             </div>
             
             <div class="promo-dates">
-              <span>Válido hasta: {{ promo.endDate | date:'dd MMM yyyy' }}</span>
-            </div>
+            <span>Válido hasta: {{ promo.endDate | date:'dd MMM yyyy' }}</span>
           </div>
-          
-          <a *ngIf="promo.place" [routerLink]="['/places', promo.place.id]" class="btn-primary">
-            Ver lugar
-          </a>
-        </article>
+        </div>
+      </article>
       </div>
     </section>
   `,
@@ -105,19 +102,21 @@ import { Promotion } from '../../core/models/feature.models';
     }
 
     .promo-card {
-      background: var(--surface-card);
-      border: 1px solid var(--border-quiet);
+      background: #ffffff;
+      border: 1px solid rgba(139, 92, 246, 0.2);
       border-radius: var(--radius-md);
       padding: 1.5rem;
       position: relative;
       display: flex;
       flex-direction: column;
       gap: 0.75rem;
-      transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+      box-shadow: 0 4px 15px rgba(0, 0, 0, 0.03);
+      transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
 
       &:hover {
-        box-shadow: var(--shadow-md);
-        transform: translateY(-2px);
+        box-shadow: 0 8px 30px rgba(139, 92, 246, 0.15);
+        transform: translateY(-4px);
+        border-color: var(--neon-purple, #bf00ff);
       }
 
       .btn-favorite {
@@ -203,18 +202,19 @@ import { Promotion } from '../../core/models/feature.models';
     .btn-primary {
       display: block;
       text-align: center;
-      background: var(--identity-glow);
+      background: linear-gradient(135deg, var(--neon-purple, #bf00ff) 0%, var(--neon-pink, #ff00ff) 100%);
       color: #fff;
       padding: 0.75rem;
       border-radius: var(--radius-sm);
       text-decoration: none;
       font-weight: 700;
       margin-top: auto;
-      transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+      transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+      box-shadow: 0 4px 15px rgba(191, 0, 255, 0.3);
 
       &:hover {
-        background: var(--identity-glow-hover);
-        transform: translateY(-1px);
+        transform: translateY(-2px);
+        box-shadow: 0 6px 20px rgba(191, 0, 255, 0.6);
       }
     }
 
@@ -266,12 +266,32 @@ export class PromotionsComponent implements OnInit {
   }
 
   loadPromotions(): void {
-    this.promotionsService.getActive().subscribe({
+    this.promotionsService.getActive()
+    .pipe(timeout(2000))
+    .subscribe({
       next: (data) => {
         this.promotions.set(data.items);
         this.loading.set(false);
       },
-      error: () => this.loading.set(false),
+      error: () => {
+        // Fallback: Mock de promociones neon premium para modo offline
+        const mockPromotions: Promotion[] = [
+          {
+            id: 'promo-1', title: '2x1 en Cócteles Neón', description: 'Disfruta de nuestra exclusiva barra con 2x1 toda la noche. Imperdible.', discountType: 'BOGO', discountValue: 0, startDate: new Date().toISOString(), endDate: new Date(Date.now() + 864000000).toISOString(), code: 'NEONNIGHT',
+            place: { id: 'mock-real-3', name: 'Dar Papaya' } as any, placeId: 'mock-real-3', currentUses: 5, status: 'ACTIVE'
+          },
+          {
+            id: 'promo-2', title: 'Cena para Dos Especial', description: 'Menú degustación con maridaje incluido para dos personas con un 20% OFF.', discountType: 'PERCENTAGE', discountValue: 20, startDate: new Date().toISOString(), endDate: new Date(Date.now() + 432000000).toISOString(), code: 'FOGATA20',
+            place: { id: 'mock-real-1', name: 'Restaurante La Fogata' } as any, placeId: 'mock-real-1', currentUses: 12, status: 'ACTIVE'
+          },
+          {
+            id: 'promo-3', title: 'Descuento de Bienvenida', description: 'Tragos seleccionados con descuento directo. Perfecto para el after office.', discountType: 'FIXED', discountValue: 15000, startDate: new Date().toISOString(), endDate: new Date(Date.now() + 172800000).toISOString(), code: 'SOLARPOP',
+            place: { id: 'mock-real-2', name: 'El Solar Gastrobar' } as any, placeId: 'mock-real-2', currentUses: 8, status: 'ACTIVE'
+          }
+        ];
+        this.promotions.set(mockPromotions);
+        this.loading.set(false);
+      },
     });
   }
 

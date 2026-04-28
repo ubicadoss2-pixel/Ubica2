@@ -70,6 +70,13 @@ export interface PlacePhoto {
   sortOrder: number;
 }
 
+export interface EventPhoto {
+  id: string;
+  url: string;
+  altText?: string;
+  sortOrder: number;
+}
+
 export interface EventItem {
   id: string;
   placeId: string;
@@ -88,6 +95,7 @@ export interface EventItem {
   specialDates?: EventSpecialDate[];
   place?: Place;
   category?: CatalogItem;
+  photos?: EventPhoto[];
 }
 
 export interface EventSpecialDate {

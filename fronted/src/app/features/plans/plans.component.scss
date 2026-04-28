@@ -8,7 +8,7 @@
   text-align: center;
   margin-bottom: 2.5rem;
   padding: 3rem 1rem;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  background: linear-gradient(135deg, var(--neon-purple, #bf00ff) 0%, var(--neon-pink, #ff00ff) 100%);
   border-radius: 20px;
   color: white;
   position: relative;
@@ -159,18 +159,18 @@
   transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
 
   &:hover {
-    box-shadow: 0 12px 40px rgba(0, 0, 0, 0.12);
+    box-shadow: 0 12px 40px rgba(191, 0, 255, 0.15);
     transform: translateY(-4px);
-    border-color: #a5b4fc;
+    border-color: var(--neon-purple, #bf00ff);
   }
 
   &.active {
-    border-color: #10b981;
-    background: linear-gradient(180deg, #ecfdf5 0%, white 30%);
+    border-color: var(--neon-pink, #ff00ff);
+    background: linear-gradient(180deg, rgba(255, 0, 255, 0.05) 0%, white 30%);
   }
 
   &.popular {
-    border-color: #8b5cf6;
+    border-color: var(--neon-purple, #bf00ff);
     position: relative;
 
     &::before {
@@ -180,7 +180,7 @@
       left: 0;
       right: 0;
       height: 4px;
-      background: linear-gradient(90deg, #8b5cf6, #a78bfa);
+      background: linear-gradient(90deg, var(--neon-purple, #bf00ff), var(--neon-pink, #ff00ff));
       border-radius: 20px 20px 0 0;
     }
   }
@@ -190,7 +190,7 @@
     top: -14px;
     left: 50%;
     transform: translateX(-50%);
-    background: linear-gradient(135deg, #8b5cf6 0%, #a78bfa 100%);
+    background: linear-gradient(135deg, var(--neon-purple, #bf00ff) 0%, var(--neon-pink, #ff00ff) 100%);
     color: white;
     font-size: 0.7rem;
     font-weight: 700;
@@ -198,7 +198,7 @@
     text-transform: uppercase;
     padding: 6px 16px;
     border-radius: 20px;
-    box-shadow: 0 4px 12px rgba(139, 92, 246, 0.4);
+    box-shadow: 0 4px 12px rgba(191, 0, 255, 0.4);
   }
 
   .current-badge {
@@ -318,7 +318,7 @@
 
   .btn-buy {
     width: 100%;
-    background: linear-gradient(135deg, #4f46e5 0%, #7c3aed 100%);
+    background: linear-gradient(135deg, var(--neon-purple, #bf00ff) 0%, var(--neon-pink, #ff00ff) 100%);
     color: white;
     border: none;
     border-radius: 12px;
@@ -328,11 +328,11 @@
     cursor: pointer;
     transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
     margin-top: auto;
-    box-shadow: 0 4px 14px rgba(79, 70, 229, 0.4);
+    box-shadow: 0 4px 14px rgba(191, 0, 255, 0.4);
 
     &:hover:not(:disabled) {
       transform: translateY(-2px);
-      box-shadow: 0 6px 20px rgba(79, 70, 229, 0.5);
+      box-shadow: 0 6px 20px rgba(191, 0, 255, 0.6);
     }
 
     &:disabled {

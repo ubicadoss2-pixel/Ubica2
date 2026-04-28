@@ -4,6 +4,35 @@
     <p>Filtra por ciudad, día de semana o fecha específica.</p>
   </div>
 
+  <!-- Carousel de Eventos de Hoy -->
+  <section class="today-carousel-section" *ngIf="todayEvents().length > 0">
+    <div class="section-title">
+      <span class="pulse-dot"></span>
+      <h2>Eventos de Hoy</h2>
+      <div class="carousel-nav">
+        <button class="nav-btn prev" (click)="scrollCarousel(-1)">❮</button>
+        <button class="nav-btn next" (click)="scrollCarousel(1)">❯</button>
+      </div>
+    </div>
+    <div class="carousel-container" #carouselContainer>
+      <div class="carousel-track">
+        <div class="carousel-card" *ngFor="let event of todayEvents()" [routerLink]="['/places', event.placeId]">
+          <div class="card-bg" [style.backgroundImage]="'url(' + (event.photos?.[0]?.url || 'https://images.unsplash.com/photo-1514525253161-7a46d19cd819?auto=format&fit=crop&w=400&q=60') + ')'"></div>
+          <div class="card-overlay">
+            <span class="category-pill">{{ event.category?.name }}</span>
+            <div class="card-content">
+              <h3>{{ event.title }}</h3>
+              <div class="card-meta">
+                <span>📍 {{ event.place?.name }}</span>
+                <span *ngIf="event.startTime">🕒 {{ event.startTime | date:'shortTime' }}</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
   <section class="filters">
     <form [formGroup]="form" (ngSubmit)="onFilter()">
       <select formControlName="cityId">
@@ -34,8 +63,6 @@
     </form>
   </section>
 
-  <p class="error" *ngIf="error()">{{ error() }}</p>
-
   <section class="event-grid" *ngIf="!loading(); else loadingTpl">
     
     <p class="empty-state" *ngIf="events().length === 0">
@@ -51,7 +78,6 @@
         <span>{{ event.currency }} {{ event.priceFrom || 0 }} - {{ event.priceTo || 0 }}</span>
         <span *ngIf="event.startTime" class="time-tag">Hora: {{ event.startTime | date:'shortTime' }}</span>
       </div>
-      <a class="btn" [routerLink]="['/places', event.placeId]">Ver lugar</a>
     </article>
   </section>
 

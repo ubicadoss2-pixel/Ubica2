@@ -1,4 +1,7 @@
-<section class="auth-wrapper">
+<section class="auth-wrapper" [class.light-mode]="!isDarkMode()">
+  <button type="button" class="theme-toggle-btn" (click)="toggleTheme()" [title]="isDarkMode() ? 'Modo Claro' : 'Modo Oscuro'">
+    {{ isDarkMode() ? '☀️' : '🌙' }}
+  </button>
   <div class="auth-card pastel-theme">
     <div class="brand">
       <span class="logo-dot"></span>
@@ -12,13 +15,12 @@
 
     <form [formGroup]="form" (ngSubmit)="submit()">
       <div class="input-group">
-        <label for="email">Correo Electrónico</label>
+        <label for="email">Correo o Usuario</label>
         <div class="input-wrapper" [class.has-error]="isFieldInvalid('email')">
-          <input id="email" type="email" formControlName="email" placeholder="correo@dominio.com" />
+          <input id="email" type="text" formControlName="email" placeholder="Escribe 'user', 'admin' u 'owner'" />
         </div>
         <div class="field-error" *ngIf="isFieldInvalid('email')">
-          <span *ngIf="form.get('email')?.errors?.['required']">El correo es obligatorio.</span>
-          <span *ngIf="form.get('email')?.errors?.['email']">Debes ingresar un correo válido.</span>
+          <span *ngIf="form.get('email')?.errors?.['required']">Este campo es obligatorio.</span>
         </div>
       </div>
 
@@ -29,7 +31,7 @@
         </div>
         <div class="field-error" *ngIf="isFieldInvalid('password')">
           <span *ngIf="form.get('password')?.errors?.['required']">La contraseña es obligatoria.</span>
-          <span *ngIf="form.get('password')?.errors?.['minlength']">Mínimo 6 caracteres.</span>
+          <span *ngIf="form.get('password')?.errors?.['minlength']">Mínimo 4 caracteres.</span>
         </div>
       </div>
 
@@ -39,7 +41,15 @@
 
       <button type="submit" [disabled]="loading() || form.invalid" class="btn-primary">
         <span class="spinner" *ngIf="loading()"></span>
-        {{ loading() ? 'Verificando credenciales...' : 'Entrar' }}
+        {{ loading() ? 'Verificando...' : 'Entrar' }}
+      </button>
+
+      <div class="divider-text">
+        <span>O TAMBIÉN</span>
+      </div>
+
+      <button type="button" class="btn-guest" (click)="guestLogin()">
+        🚀 Entrar con modo Invitado (Demo)
       </button>
     </form>
 

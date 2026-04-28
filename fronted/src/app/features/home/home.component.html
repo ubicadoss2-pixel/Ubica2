@@ -12,6 +12,9 @@
       <button class="btn-ghost" (click)="goToMyLocation(); addressInput.value = ''">
         <span>📍</span> {{ 'Mi ubicación' | translate }}
       </button>
+      <button class="btn-heatmap" [class.active]="showHeatmap()" (click)="toggleHeatmap()" title="Ver zonas con más movimiento">
+        <span>🔥</span> {{ showHeatmap() ? 'Ocultar Heatmap' : 'Ver Heatmap' }}
+      </button>
     </div>
   </div>
 
@@ -81,8 +84,24 @@
     </form>
   </section>
 
+  <!-- AI Recommendations -->
+  <section class="recommendations-section" *ngIf="recommendations().length > 0">
+    <div class="section-header">
+      <h2>✨ Recomendados para ti</h2>
+      <p>Según la hora del día y las tendencias actuales.</p>
+    </div>
+    <div class="recommendations-scroll">
+      <div class="rec-card" *ngFor="let rec of recommendations()" [routerLink]="['/places', rec.id]">
+        <div class="rec-image" [style.backgroundImage]="'url(' + (rec.photos?.[0]?.url) + ')'"></div>
+        <div class="rec-info">
+          <h4>{{ rec.name }}</h4>
+          <span class="rec-type">{{ rec.placeType?.name }}</span>
+        </div>
+      </div>
+    </div>
+  </section>
+
   <!-- Messages -->
-  <p class="error-msg" *ngIf="error()">{{ error() }}</p>
   <p class="success-msg" *ngIf="success()">{{ success() }}</p>
 
   <!-- Places Grid -->
@@ -103,7 +122,12 @@
     <div class="places-grid" *ngIf="!loading() && places().length > 0">
       <article class="place-card" *ngFor="let place of places()">
         <div class="card-image">
-          <img [src]="(place.photos && place.photos.length > 0) ? place.photos[0].url : 'https://images.unsplash.com/photo-1514565131-fce0801e5785?auto=format&fit=crop&w=600&q=80'" [alt]="place.name">
+          <img 
+            [src]="(place.photos && place.photos.length > 0) ? place.photos[0].url : 
+                  (place.name.toLowerCase().includes('museo') ? 'https://arquitecturapanamericana.com/wp-content/uploads/2016/10/Salmona-1.jpg' :
+                  (place.name.toLowerCase().includes('parque') ? 'https://images.unsplash.com/photo-1542332213-9b5a5a3fab35?auto=format&fit=crop&w=800&q=60' :
+                  'https://images.unsplash.com/photo-1514565131-fce0801e5785?auto=format&fit=crop&w=800&q=80'))" 
+            [alt]="place.name">
           <span class="type-badge">{{ place.placeType?.name || ('Lugar' | translate) }}</span>
           <button class="fav-btn" (click)="toggleFavorite(place.id)">
             {{ favoriteIds().has(place.id) ? '❤️' : '🤍' }}
@@ -124,11 +148,36 @@
         <div class="card-footer">
           <a [routerLink]="['/places', place.id]" class="btn-detail">{{ 'Ver Detalle' | translate }}</a>
           <button type="button" class="btn-route" (click)="routeTo(place)">{{ 'Cómo llegar' | translate }}</button>
-          <button type="button" class="btn-save" (click)="toggleFavorite(place.id)">
-            {{ favoriteIds().has(place.id) ? ('Quitar favorito' | translate) : ('Guardar' | translate) }}
+          <button *ngIf="authStore.isAuthenticated()" type="button" class="btn-heart-card" (click)="toggleFavorite(place.id)">
+            {{ favoriteIds().has(place.id) ? '❤️' : '🤍' }}
           </button>
         </div>
       </article>
+    </div>
+
+    <!-- Neon Reviews Feature (Mock for UI) -->
+    <div class="reviews-preview">
+      <div class="section-header-reviews">
+        <h2>💬 Reseñas de Neón</h2>
+      </div>
+      <div class="reviews-list">
+        <div class="review-item">
+          <div class="user-avatar">LA</div>
+          <div class="review-text">
+            <strong>Laura A.</strong>
+            <p>¡El ambiente de Dar Papaya es increíble! Los cocteles brillan bajo la luz negra. 💜</p>
+            <div class="stars">⭐⭐⭐⭐⭐</div>
+          </div>
+        </div>
+        <div class="review-item">
+          <div class="user-avatar">JP</div>
+          <div class="review-text">
+            <strong>Juan P.</strong>
+            <p>La Fogata nunca falla. La mejor atención en Armenia. 🥩✨</p>
+            <div class="stars">⭐⭐⭐⭐⭐</div>
+          </div>
+        </div>
+      </div>
     </div>
   </section>
 </div>

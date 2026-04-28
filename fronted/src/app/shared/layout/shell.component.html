@@ -1,14 +1,13 @@
 <div class="shell-bg"></div>
-<header class="topbar-shell">
+<header class="topbar-shell" [class.auth-theme]="isAuthPage()" [class.light-mode]="isAuthPage() && !appState.authDarkMode()">
   <div class="shell-content">
     <a routerLink="/" class="brand-logo">
-      <span class="logo-dot"></span>
-      Ubica2
+      <img src="assets/logo_final.png" alt="Ubica2 Logo" class="logo-banner">
     </a>
 
     <nav class="nav-capsule">
       <a routerLink="/" routerLinkActive="active" [routerLinkActiveOptions]="{ exact: true }">
-        <span class="nav-icon">🌍</span> {{ 'Explorar' | translate }}
+        {{ 'Explorar' | translate }}
       </a>
       <a routerLink="/agenda" routerLinkActive="active">{{ 'Eventos' | translate }}</a>
       <a *ngIf="authStore.isAuthenticated()" routerLink="/favorites" routerLinkActive="active">{{ 'Favoritos' | translate }}</a>
@@ -43,3 +42,4 @@
 </main>
 
 <app-chatbot-widget></app-chatbot-widget>
+<app-notification-toast></app-notification-toast>

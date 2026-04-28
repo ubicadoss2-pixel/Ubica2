@@ -11,6 +11,7 @@ import { FavoritesService } from '../../core/services/favorites.service';
 import { PlacesService } from '../../core/services/places.service';
 import { ReportsService } from '../../core/services/reports.service';
 import { HistoryService } from '../../core/services/preferences-history.service';
+import { timeout } from 'rxjs/operators';
 
 @Component({
   selector: 'app-place-detail',
@@ -152,13 +153,66 @@ export class PlaceDetailComponent {
   }
 
   private loadData(placeId: string): void {
-    this.placesService.getById(placeId).subscribe({
+    this.placesService.getById(placeId)
+    .pipe(timeout(2000))
+    .subscribe({
       next: (place) => {
         this.place.set(place);
         this.analyticsService.create({ eventType: 'PLACE_VIEW', placeId }).subscribe();
         this.historyService.addToHistory(placeId, 'place').subscribe();
       },
-      error: (err) => this.error.set(err?.error?.message ?? 'No se pudo cargar el lugar.'),
+      error: (err) => {
+        // Fallback humano y corto (Offline / Sin Backend)
+        const mockDetails: Record<string, any> = {
+          'mock-real-1': {
+            id: 'mock-real-1', name: 'Restaurante La Fogata', contactInfo: '+57 320 123 4567',
+            description: 'El clásico de Armenia. Si buscas buena parrillada y cócteles en un ambiente top, es aquí. Ideal para celebrar.',
+            city: { name: 'Armenia' }, placeType: { name: 'Restaurante' }, priceLevel: 5,
+            photos: [{ url: 'https://images.unsplash.com/photo-1544148103-0773bf10d330?auto=format&fit=crop&w=1200&q=80' }],
+            latitude: 4.5512, longitude: -75.6598
+          },
+          'mock-real-2': {
+            id: 'mock-real-2', name: 'El Solar Gastrobar', contactInfo: '+57 311 987 6543',
+            description: 'Ambiente relajado, comida increíble para compartir y buena música. El plan perfecto para arrancar la noche.',
+            city: { name: 'Armenia' }, placeType: { name: 'Gastrobar' }, priceLevel: 3,
+            photos: [{ url: 'https://images.unsplash.com/photo-1470337458703-46ad1756a187?auto=format&fit=crop&w=1200&q=80' }],
+            latitude: 4.5495, longitude: -75.6631
+          },
+          'mock-real-3': {
+            id: 'mock-real-3', name: 'Dar Papaya', contactInfo: '+57 300 456 7890',
+            description: 'Fiesta garantizada. Buena rumba, excelentes tragos y el mejor ambiente en plena Avenida Bolívar.',
+            city: { name: 'Armenia' }, placeType: { name: 'Discoteca/Bar' }, priceLevel: 3,
+            photos: [{ url: 'https://images.unsplash.com/photo-1572116469696-31de0f17cc34?auto=format&fit=crop&w=1200&q=80' }],
+            latitude: 4.5540, longitude: -75.6580
+          },
+          'mock-real-4': {
+            id: 'mock-real-4', name: 'Museo del Oro Quimbaya', contactInfo: '+57 6 741 3300',
+            description: 'Un diseño espectacular del maestro Rogelio Salmona. Perfecto para una tarde tranquila conociendo nuestra historia.',
+            city: { name: 'Armenia' }, placeType: { name: 'Museo' }, priceLevel: 2,
+            photos: [{ url: 'https://arquitecturapanamericana.com/wp-content/uploads/2016/10/Salmona-1.jpg' }],
+            latitude: 4.5501, longitude: -75.6606
+          },
+          'mock-real-bunker': {
+            id: 'mock-real-bunker',
+            name: 'El Bunker',
+            contactInfo: '+57 322 000 0000',
+            description: 'Experiencia clandestina en el corazón de Armenia. Coctelería de autor y ambiente industrial con toques de neón. El secreto mejor guardado de la ciudad.',
+            city: { name: 'Armenia' },
+            placeType: { name: 'Bar/Gastrobar' },
+            priceLevel: 4,
+            photos: [{ url: 'https://images.unsplash.com/photo-1514362545857-3bc16c4c7d1b?auto=format&fit=crop&w=1200&q=80' }],
+            latitude: 4.5450,
+            longitude: -75.6680
+          }
+        };
+
+        if (mockDetails[placeId]) {
+          this.place.set(mockDetails[placeId] as Place);
+          this.error.set(null); // Limpiar error si tenemos el mock
+        } else {
+          this.error.set(err?.error?.message ?? 'No se pudo cargar el lugar.');
+        }
+      }
     });
 
     this.eventsService.listByPlace(placeId).subscribe({

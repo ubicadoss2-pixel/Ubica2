@@ -50,11 +50,11 @@ export class ThemeService {
     // Also apply to root for CSS variables
     const root = document.documentElement;
     if (theme === 'dark') {
-      root.style.setProperty('--bg-primary', '#1a1a2e');
-      root.style.setProperty('--bg-secondary', '#16213e');
+      root.style.setProperty('--bg-primary', '#050508');
+      root.style.setProperty('--bg-secondary', '#0f172a');
       root.style.setProperty('--text-primary', '#ffffff');
-      root.style.setProperty('--text-secondary', '#b0b0b0');
-      root.style.setProperty('--card-bg', '#1f2937');
+      root.style.setProperty('--text-secondary', '#cbd5e1');
+      root.style.setProperty('--card-bg', 'rgba(30, 41, 59, 0.7)');
     } else {
       root.style.setProperty('--bg-primary', '#ffffff');
       root.style.setProperty('--bg-secondary', '#f8f9fa');

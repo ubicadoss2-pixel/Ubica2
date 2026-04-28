@@ -14,7 +14,7 @@
     </div>
 
     <div class="actions">
-      <button class="btn-main" type="button" (click)="addFavorite()">Guardar favorito</button>
+      <button *ngIf="auth.isAuthenticated()" class="btn-heart" type="button" (click)="addFavorite()" title="Guardar en favoritos">❤️</button>
       <button class="btn-light" type="button" (click)="viewOnMap()">📍 Ver en el mapa</button>
     </div>
   </article>
