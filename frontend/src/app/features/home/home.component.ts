@@ -1116,7 +1116,7 @@ export class HomeComponent implements OnInit, AfterViewInit {
     this.placesService
       .list(this.form.getRawValue())
       .pipe(
-        timeout(2000),
+        timeout(15000),
         finalize(() => this.loading.set(false))
       )
       .subscribe({

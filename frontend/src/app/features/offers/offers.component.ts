@@ -558,7 +558,7 @@ export class OffersComponent implements OnInit {
 
   loadOffers(): void {
     this.offersService.getActive()
-    .pipe(timeout(2000))
+    .pipe(timeout(15000))
     .subscribe({
       next: (data) => {
         this.offers.set(data.items);
