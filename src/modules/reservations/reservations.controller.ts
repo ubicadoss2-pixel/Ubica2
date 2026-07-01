@@ -144,7 +144,11 @@ export const getOwnerReservations = async (req: Request, res: Response) => {
       return res.status(401).json({ error: "Unauthorized" });
     }
     
-    const reservations = await getReservationsByOwner(user.id);
+    const startDate = req.query.startDate ? String(req.query.startDate) : undefined;
+    const endDate = req.query.endDate ? String(req.query.endDate) : undefined;
+    const placeId = req.query.placeId && req.query.placeId !== 'all' ? String(req.query.placeId) : undefined;
+    
+    const reservations = await getReservationsByOwner(user.id, { startDate, endDate, placeId });
     res.status(200).json({ items: reservations });
   } catch (error: any) {
     res.status(500).json({ error: error.message || "Internal server error" });

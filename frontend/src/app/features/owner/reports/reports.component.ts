@@ -107,10 +107,17 @@ export class ReportsComponent implements OnInit, AfterViewInit {
     this.isLoading = true;
     const user = this.authStore.user();
 
+    const params = new URLSearchParams();
+    if (this.startDate) params.append('startDate', this.startDate);
+    if (this.endDate) params.append('endDate', this.endDate);
+    if (this.selectedPlace && this.selectedPlace !== 'all') params.append('placeId', this.selectedPlace);
+    
+    const query = params.toString() ? `?${params.toString()}` : '';
+
     forkJoin({
-      summary: this.analyticsService.summary().pipe(catchError(() => of(null))),
+      summary: this.http.get(`${environment.apiBaseUrl}/analytics/summary${query}`).pipe(catchError(() => of(null))),
       places: user ? this.placesService.list({ ownerId: user.id, pageSize: 50 }).pipe(catchError(() => of(null))) : of(null),
-      reservations: user ? this.http.get(`${environment.apiBaseUrl}/reservations/owner`).pipe(catchError(() => of(null))) : of(null)
+      reservations: user ? this.http.get(`${environment.apiBaseUrl}/reservations/owner${query}`).pipe(catchError(() => of(null))) : of(null)
     }).subscribe(({ summary, places, reservations }) => {
       
       if (places) {
@@ -123,80 +130,74 @@ export class ReportsComponent implements OnInit, AfterViewInit {
         this.kpis.totalFavorites = s.totalFavorites ?? 0;
         this.kpis.averageRating = s.averageRating ?? 0;
         this.kpis.totalReservations = s.totalReservations ?? 0;
+        
+        // Build chart data directly from backend aggregations
+        this.buildChartData(s.charts);
+      } else {
+        this.buildChartData(null);
       }
-
-      const rawEvents = summary ? (summary as any).rawEvents || [] : [];
       
       // Load Reservations for table
       if (reservations) {
         const resList = (reservations as any).items || [];
         this.buildTableData(resList);
+      } else {
+        this.tableData = [];
       }
+      
       this.filteredTableData = [...this.tableData];
 
-      // Build chart data
-      this.buildChartData(rawEvents);
       this.buildAlerts();
 
       this.isLoading = false;
       this.cdr.detectChanges();
-      setTimeout(() => this.initCharts(), 100);
+      
+      // Refresh charts if they exist, or init them
+      if (this.visitsChart) {
+        this.updateCharts();
+      } else {
+        setTimeout(() => this.initCharts(), 100);
+      }
     });
   }
 
-  private buildChartData(rawEvents: any[]) {
-    // 1. Visitas (Lugares más visitados) - Bar chart
-    const placeCounts: Record<string, number> = {};
-    const viewEvents = rawEvents.filter(e => e.eventType === 'PLACE_VIEW' || e.eventType === 'EVENT_VIEW');
-    
-    viewEvents.forEach(e => {
-      const pName = e.place ? e.place.name : 'General';
-      placeCounts[pName] = (placeCounts[pName] || 0) + 1;
-    });
-
-    const sortedPlaces = Object.entries(placeCounts)
-      .sort((a, b) => b[1] - a[1])
-      .slice(0, 5);
-
-    this.visitLabels = sortedPlaces.length > 0 ? sortedPlaces.map(x => x[0]) : ['No hay datos'];
-    this.visitData = sortedPlaces.length > 0 ? sortedPlaces.map(x => x[1]) : [1];
-
-    // 2. Rating distribution - Doughnut
-    this.ratingDistribution = [0, 0, 0, 0, 0];
-    const reviewEvents = rawEvents.filter(e => e.eventType === 'REPORT_CREATE' || e.meta?.rating); // Simplification, normally comes from comments table, but we use rawEvents for simplicity
-    
-    reviewEvents.forEach(e => {
-      if (e.meta?.rating) {
-        const r = Math.round(e.meta.rating);
-        if (r >= 1 && r <= 5) this.ratingDistribution[r - 1]++;
-      }
-    });
-    
-    if (this.ratingDistribution.every(x => x === 0)) {
-      this.ratingDistribution = [0, 0, 0, 1, 3]; // Mock some data if 0
+  private buildChartData(charts: any) {
+    if (!charts) {
+      this.visitLabels = ['Sin datos'];
+      this.visitData = [0];
+      this.ratingDistribution = [0, 0, 0, 0, 0];
+      this.monthlyLabels = [];
+      this.monthlyTotals = [];
+      return;
     }
 
-    // 3. Monthly Comparison - Line/Bar
-    this.monthlyLabels = [];
-    this.monthlyTotals = [];
-    const monthlyCounts: Record<string, number> = {};
+    this.visitLabels = charts.visitsByPlace?.labels || ['Sin datos'];
+    this.visitData = charts.visitsByPlace?.data || [0];
     
-    for (let i = 5; i >= 0; i--) {
-      const d = new Date();
-      d.setMonth(d.getMonth() - i);
-      const monthStr = d.toISOString().slice(0, 7); // YYYY-MM
-      this.monthlyLabels.push(d.toLocaleDateString('es-CO', { month: 'short' }));
-      monthlyCounts[monthStr] = 0;
+    this.ratingDistribution = charts.ratingDistribution || [0, 0, 0, 0, 0];
+    if (this.ratingDistribution.every((x: number) => x === 0)) {
+      this.ratingDistribution = [0, 0, 0, 0, 0]; 
     }
 
-    viewEvents.forEach(e => {
-      const monthStr = new Date(e.occurredAt).toISOString().slice(0, 7);
-      if (monthlyCounts[monthStr] !== undefined) {
-        monthlyCounts[monthStr]++;
-      }
-    });
+    this.monthlyLabels = charts.visitsByMonth?.labels || [];
+    this.monthlyTotals = charts.visitsByMonth?.data || [];
+  }
 
-    this.monthlyTotals = Object.values(monthlyCounts);
+  private updateCharts() {
+    if (this.visitsChart) {
+      this.visitsChart.data.labels = this.visitLabels;
+      this.visitsChart.data.datasets[0].data = this.visitData;
+      this.visitsChart.update();
+    }
+    if (this.ratingsChart) {
+      this.ratingsChart.data.datasets[0].data = this.ratingDistribution;
+      this.ratingsChart.update();
+    }
+    if (this.historyChart) {
+      this.historyChart.data.labels = this.monthlyLabels;
+      this.historyChart.data.datasets[0].data = this.monthlyTotals;
+      this.historyChart.update();
+    }
   }
 
   private buildTableData(reservations: any[]) {
@@ -215,27 +216,22 @@ export class ReportsComponent implements OnInit, AfterViewInit {
   private buildAlerts() {
     this.analysisAlerts = [];
     if (this.kpis.totalVisits > 0) {
-      this.analysisAlerts.push({ type: 'success', message: `¡Excelente! Acumulas ${this.kpis.totalVisits.toLocaleString()} visitas registradas en la plataforma.` });
+      this.analysisAlerts.push({ type: 'success', message: `¡Excelente! Acumulas ${this.kpis.totalVisits.toLocaleString()} visitas registradas en el período seleccionado.` });
     }
-    if (this.kpis.averageRating >= 4.5) {
-      this.analysisAlerts.push({ type: 'info', message: `Tu calificación promedio es ${this.kpis.averageRating}/5 ⭐ — mantén la calidad del servicio.` });
+    if (this.kpis.averageRating > 0) {
+      if (this.kpis.averageRating >= 4.5) {
+        this.analysisAlerts.push({ type: 'info', message: `Tu calificación promedio es ${this.kpis.averageRating}/5 ⭐ — mantén la calidad del servicio.` });
+      } else {
+        this.analysisAlerts.push({ type: 'warning', message: `Tu calificación promedio es ${this.kpis.averageRating}/5. Considera responder a las reseñas de usuarios.` });
+      }
     } else {
-      this.analysisAlerts.push({ type: 'warning', message: `Tu calificación promedio es ${this.kpis.averageRating}/5. Considera responder a las reseñas de usuarios.` });
+      this.analysisAlerts.push({ type: 'info', message: `Aún no tienes suficientes reseñas para calcular una calificación promedio en este período.` });
     }
   }
 
   applyFilters() {
-    let filtered = [...this.tableData];
-    if (this.selectedPlace !== 'all') {
-      const placeName = this.ownerPlaces.find(p => p.id === this.selectedPlace)?.name;
-      if (placeName) {
-        filtered = filtered.filter(row => row.placeName.includes(placeName));
-      }
-    }
-    this.filteredTableData = filtered;
-    this.currentPage = 1;
-
-    // We can also re-filter charts if needed, but for now we'll just update table.
+    // Ya no filtramos localmente en memoria. Re-cargamos todo desde el servidor.
+    this.loadRealData();
   }
 
   initCharts() {

@@ -17,13 +17,27 @@ const createReservation = async (data) => {
     });
 };
 exports.createReservation = createReservation;
-const getReservationsByOwner = async (ownerId) => {
+const getReservationsByOwner = async (ownerId, filters) => {
+    const { startDate, endDate, placeId } = filters || {};
+    let dateFilter = undefined;
+    if (startDate || endDate) {
+        dateFilter = {};
+        if (startDate)
+            dateFilter.gte = new Date(`${startDate}T00:00:00.000Z`);
+        if (endDate)
+            dateFilter.lte = new Date(`${endDate}T23:59:59.999Z`);
+    }
+    const whereClause = {
+        place: {
+            ownerUserId: ownerId,
+            ...(placeId ? { id: placeId } : {})
+        }
+    };
+    if (dateFilter) {
+        whereClause.createdAt = dateFilter;
+    }
     return prisma_1.prisma.reservation.findMany({
-        where: {
-            place: {
-                ownerUserId: ownerId
-            }
-        },
+        where: whereClause,
         include: {
             user: {
                 select: {

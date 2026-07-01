@@ -24,7 +24,10 @@ const summary = async (req, res) => {
         else if (role === "ADMIN") {
             ownerId = req.query.ownerId ? String(req.query.ownerId) : undefined;
         }
-        const data = await (0, analytics_service_1.summaryAnalytics)(ownerId);
+        const startDate = req.query.startDate ? String(req.query.startDate) : undefined;
+        const endDate = req.query.endDate ? String(req.query.endDate) : undefined;
+        const placeId = req.query.placeId && req.query.placeId !== 'all' ? String(req.query.placeId) : undefined;
+        const data = await (0, analytics_service_1.summaryAnalytics)(ownerId, { startDate, endDate, placeId });
         res.json(data);
     }
     catch (error) {

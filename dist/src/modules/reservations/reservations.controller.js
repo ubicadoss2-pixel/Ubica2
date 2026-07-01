@@ -66,12 +66,12 @@ const confirmReservation = async (req, res) => {
         </div>
       </div>
     `;
-        // Intentar enviar correo
-        const emailSent = await (0, email_1.sendEmail)({
+        // Intentar enviar correo (en segundo plano)
+        (0, email_1.sendEmail)({
             to: email || user?.email,
             subject: `Confirmación de Reserva en ${placeName} - Ubica2`,
             html
-        });
+        }).catch(err => console.error("Error enviando email cliente:", err));
         if (ownerEmail) {
             const ownerHtml = `
         <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; border: 1px solid #eaeaea; border-radius: 10px; overflow: hidden;">
@@ -117,21 +117,15 @@ const confirmReservation = async (req, res) => {
           </div>
         </div>
       `;
-            await (0, email_1.sendEmail)({
+            (0, email_1.sendEmail)({
                 to: ownerEmail,
                 subject: `Nueva reserva en ${placeName} - Ubica2`,
                 html: ownerHtml
-            });
+            }).catch(err => console.error("Error enviando email owner:", err));
         }
-        if (emailSent) {
-            res.status(200).json({
-                message: "Reserva confirmada y guardada exitosamente.",
-                previewUrl: typeof emailSent === 'string' ? emailSent : undefined
-            });
-        }
-        else {
-            res.status(200).json({ message: "Reserva confirmada, pero hubo un problema al enviar el correo." });
-        }
+        res.status(200).json({
+            message: "Reserva confirmada y guardada exitosamente."
+        });
     }
     catch (error) {
         console.error("Error al confirmar reserva:", error);
@@ -145,7 +139,10 @@ const getOwnerReservations = async (req, res) => {
         if (!user) {
             return res.status(401).json({ error: "Unauthorized" });
         }
-        const reservations = await (0, reservations_service_1.getReservationsByOwner)(user.id);
+        const startDate = req.query.startDate ? String(req.query.startDate) : undefined;
+        const endDate = req.query.endDate ? String(req.query.endDate) : undefined;
+        const placeId = req.query.placeId && req.query.placeId !== 'all' ? String(req.query.placeId) : undefined;
+        const reservations = await (0, reservations_service_1.getReservationsByOwner)(user.id, { startDate, endDate, placeId });
         res.status(200).json({ items: reservations });
     }
     catch (error) {

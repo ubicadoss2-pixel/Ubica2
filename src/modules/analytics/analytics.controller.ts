@@ -23,7 +23,11 @@ export const summary = async (req: any, res: Response) => {
       ownerId = req.query.ownerId ? String(req.query.ownerId) : undefined;
     }
 
-    const data = await summaryAnalytics(ownerId);
+    const startDate = req.query.startDate ? String(req.query.startDate) : undefined;
+    const endDate = req.query.endDate ? String(req.query.endDate) : undefined;
+    const placeId = req.query.placeId && req.query.placeId !== 'all' ? String(req.query.placeId) : undefined;
+
+    const data = await summaryAnalytics(ownerId, { startDate, endDate, placeId });
     res.json(data);
   } catch (error: any) {
     res.status(500).json({ message: error.message });
