@@ -11,7 +11,11 @@ const toTime = (value) => {
         return null;
     // Support both HH:mm:ss and HH:mm
     const parts = trimmed.split(":");
-    const timePart = parts.length === 2 ? `${trimmed}:00` : trimmed;
+    let timePart = parts.length === 2 ? `${trimmed}:00` : trimmed;
+    // Fix single digit hour from some mobile inputs
+    if (timePart.indexOf(':') === 1) {
+        timePart = '0' + timePart;
+    }
     const date = new Date(`1970-01-01T${timePart}Z`);
     if (isNaN(date.getTime())) {
         throw new Error(`Formato de hora invalido: ${value}. Use HH:mm o HH:mm:ss`);
@@ -130,9 +134,6 @@ const updateEvent = async (eventId, data, userId, isAdmin) => {
         throw new Error("Evento no existe");
     if (!isAdmin && event.place.ownerUserId !== userId)
         throw new Error("No autorizado");
-    if (new Date() >= event.startTime) {
-        throw new Error("No se puede editar un evento que ya comenzó");
-    }
     const startTime = data.startTime ? toTime(data.startTime) : event.startTime;
     const endTime = data.endTime ? toTime(data.endTime) : event.endTime;
     if (!startTime)
@@ -278,7 +279,13 @@ const listEventsByPlace = async (placeId, query) => {
     const { skip, take } = (0, pagination_1.getPagination)(page, pageSize);
     const events = await prisma_1.prisma.event.findMany({
         where: { placeId, deletedAt: null, status: "ACTIVE" },
-        include: { recurrence: true, specialDates: true, category: true, place: true },
+        include: {
+            recurrence: true,
+            specialDates: true,
+            category: true,
+            photos: { orderBy: { sortOrder: "asc" } },
+            place: true
+        },
         orderBy: { createdAt: "desc" },
         skip,
         take,
@@ -293,6 +300,7 @@ const listEventsByPlace = async (placeId, query) => {
         addressLine: event.place?.addressLine || null,
         neighborhood: event.place?.neighborhood || null,
         postalCode: event.place?.postalCode || null,
+        eventDate: event.specialDates?.[0]?.eventDate || null,
     }));
     return { page, pageSize, total: filtered.length, items: mapped };
 };
@@ -333,7 +341,13 @@ const listAgenda = async (query, userId, role) => {
     console.log("[listAgenda DEBUG] query:", query, "userId:", userId, "role:", role, "where:", JSON.stringify(where));
     const events = await prisma_1.prisma.event.findMany({
         where,
-        include: { recurrence: true, specialDates: true, category: true, place: { include: { city: true } } },
+        include: {
+            recurrence: true,
+            specialDates: true,
+            category: true,
+            photos: { orderBy: { sortOrder: "asc" } },
+            place: { include: { city: true } }
+        },
         orderBy: [
             { isSponsored: "desc" },
             { createdAt: "desc" }
@@ -349,6 +363,7 @@ const listAgenda = async (query, userId, role) => {
         addressLine: event.place?.addressLine || null,
         neighborhood: event.place?.neighborhood || null,
         postalCode: event.place?.postalCode || null,
+        eventDate: event.specialDates?.[0]?.eventDate || null,
     }));
     return { page, pageSize, total: filtered.length, items: mapped };
 };

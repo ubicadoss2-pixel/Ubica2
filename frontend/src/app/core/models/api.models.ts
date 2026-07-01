@@ -1,4 +1,4 @@
-import { Promotion } from './feature.models';
+import { Plan, Offer, ChatConversation } from './feature.models';
 
 export type UserRole = 'USER' | 'OWNER' | 'ADMIN';
 
@@ -50,7 +50,7 @@ export interface Place {
   ownerUser?: PlaceOwner;
   isSponsored?: boolean;
   sponsoredUntil?: string | null;
-  promotions?: Promotion[];
+  offers?: Offer[];
   averageRating?: number | null;
   totalRatings?: number;
 }

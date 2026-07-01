@@ -20,16 +20,26 @@ const initTransporter = async () => {
     }
     else {
         console.log("No SMTP credentials found. Generating test Ethereal account...");
-        const testAccount = await nodemailer_1.default.createTestAccount();
-        transporter = nodemailer_1.default.createTransport({
-            host: "smtp.ethereal.email",
-            port: 587,
-            secure: false,
-            auth: {
-                user: testAccount.user,
-                pass: testAccount.pass,
-            },
-        });
+        try {
+            // Usamos Promise.race para evitar que Ethereal bloquee el servidor infinitamente
+            const testAccount = await Promise.race([
+                nodemailer_1.default.createTestAccount(),
+                new Promise((_, reject) => setTimeout(() => reject(new Error("Ethereal timeout")), 5000))
+            ]);
+            transporter = nodemailer_1.default.createTransport({
+                host: "smtp.ethereal.email",
+                port: 587,
+                secure: false,
+                auth: {
+                    user: testAccount.user,
+                    pass: testAccount.pass,
+                },
+            });
+        }
+        catch (e) {
+            console.error("No se pudo conectar a Ethereal. Por favor, configura credenciales SMTP reales.");
+            throw new Error("No hay configuración de servidor de correos (SMTP).");
+        }
     }
 };
 const sendEmail = async (options) => {

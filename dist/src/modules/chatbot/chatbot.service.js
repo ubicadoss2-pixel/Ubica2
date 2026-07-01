@@ -3,14 +3,14 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.deleteConversation = exports.getUserConversations = exports.sendMessage = exports.callAI = exports.getConversationMessages = exports.getOrCreateConversation = exports.sendMessageSchema = void 0;
 const prisma_1 = require("../../config/prisma");
 const zod_1 = require("zod");
-const SYSTEM_PROMPT = `Eres el asistente virtual estrella de Ubica2, la mejor plataforma colombiana para descubrir parches, eventos y lugares brutales en la ciudad. Tu rol es ser un amigo súper cálido, cercano, empático y que se las sabe todas sobre la movida local.
+const SYSTEM_PROMPT = `Eres el asistente virtual de Ubica2, y tu rol es ser un promotor turístico profesional y experto en lugares de ocio de la ciudad. Tu objetivo es recomendar planes, restaurantes, bares y eventos de forma persuasiva y comercial, pero siempre manteniendo un tono maduro, sofisticado y sumamente profesional.
 
 REGLAS IMPORTANTES:
-1. Actúa 100% como un humano local (colombiano). Usa expresiones cálidas y naturales (ej. "¡Qué más!", "Claro que sí", "¡De una!", "Te tengo el súper plan"). NUNCA suenes como un robot o sistema automatizado.
-2. Si te preguntan por cosas fuera de tus temas (que son lugares y eventos en Ubica2), responde con gracia y redirige la charla hacia lo que sabes hacer: ¡recomendar los mejores planes!
-3. NUNCA inventes nombres de lugares o información. Solo usa los datos que te proveemos en el contexto. Si no hay datos, sé sincero y dile que por ahora no tienes esa info, ¡pero siempre ofrécele otra alternativa genial!
-4. Mantén tus respuestas conversacionales, fluidas, cortas y al grano (máximo 2 párrafos cortos). Usa pocos emojis, maximo 1-2 por respuesta, solo cuando sea natural.
-5. Nunca digas "basado en mi base de datos" o "según el contexto". Habla como si recordaras todo porque eres el que más conoce la ciudad.
+1. Comunícate como un asesor turístico de alto nivel. Sé persuasivo, elocuente y servicial. Usa un lenguaje estructurado, maduro y profesional. BAJO NINGUNA CIRCUNSTANCIA uses lenguaje infantil, exceso de jerga, actitudes exageradas ni suenes inmaduro o como un niño.
+2. Tu prioridad es vender la experiencia con elegancia. Resalta la exclusividad, la calidad del ambiente y la oferta del lugar para convencer al usuario de visitarlo.
+3. NUNCA inventes lugares ni información. Solo usa los datos que te proveemos en el contexto. Si no tienes el dato, ofrece otra alternativa real.
+4. Sé conciso y directo (máximo 2 párrafos cortos). NO uses emojis o usa máximo 1 por mensaje de forma muy sutil.
+5. Nunca digas "basado en mi base de datos" o "según el contexto". Habla con propiedad como si fueras un experto local real.
 
 DATOS DEL SISTEMA:
 - Ciudades principales: Armenia (toda la plataforma opera únicamente en Armenia, Quindío).
@@ -56,7 +56,7 @@ const getConversationMessages = async (conversationId, limit = 50) => {
 exports.getConversationMessages = getConversationMessages;
 const callAI = async (messages, dynamicContext) => {
     const apiKey = process.env.AI_API_KEY;
-    const isValidApiKey = apiKey && apiKey.startsWith('AIza') && apiKey.length > 20;
+    const isValidApiKey = apiKey && apiKey.length > 20;
     console.log("AI_API_KEY:", apiKey ? (isValidApiKey ? "VALID_GEMINI_KEY" : "INVALID_FORMAT") : "NOT SET");
     // Check for image attachments in messages - Gemini flash doesn't support raw image URLs
     const userMessages = messages.filter(m => m.role === 'user');
@@ -79,10 +79,66 @@ const callAI = async (messages, dynamicContext) => {
         .replace(/[^\w\s]/g, " ")
         .replace(/\s+/g, " ")
         .trim();
+    // 1. Fetch real DB data for context & routing
+    const places = await prisma_1.prisma.place.findMany({
+        where: { status: "PUBLISHED" },
+        include: { placeType: true, city: true },
+        take: 50,
+    });
+    const events = await prisma_1.prisma.event.findMany({
+        where: { status: "ACTIVE", deletedAt: null },
+        include: { place: true, category: true },
+        take: 30,
+    });
+    const knownPlaces = places.map((p) => ({
+        name: p.name,
+        normalizedName: normalizeText(p.name),
+        type: p.placeType?.name,
+        city: p.city?.name,
+        address: p.addressLine,
+        description: p.description,
+        lat: p.latitude !== null ? Number(p.latitude) : null,
+        lng: p.longitude !== null ? Number(p.longitude) : null,
+    }));
+    // Build context from the last 4 user messages to catch intents
+    const userMessagesArray = messages.filter(m => m.role === 'user').map(m => m.content);
+    const fullContext = userMessagesArray.slice(-4).join(' ').toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+    const routeIntent = /ruta|como llegar|llegar|ir a|llevarme|traz|donde|ubicacion|camino|navegar|direccion/;
+    // 2. Intercept Route Intent BEFORE Gemini to ensure the UI gets the 'ROUTE' action immediately
+    const findPlaceInText = (text) => knownPlaces.find((p) => {
+        if (text.includes(p.normalizedName))
+            return true;
+        const words = p.normalizedName.split(' ');
+        if (words.length > 1) {
+            const partial = words.slice(0, 2).join(' ');
+            if (partial.length > 4 && text.includes(partial))
+                return true;
+        }
+        return false;
+    });
+    let routePlace = findPlaceInText(normalized);
+    if (!routePlace) {
+        const recentMessages = [...userMessagesArray].reverse().slice(0, 4);
+        for (const msg of recentMessages) {
+            const msgNormalized = msg.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/[^\w\s]/g, " ").replace(/\s+/g, " ").trim();
+            routePlace = findPlaceInText(msgNormalized);
+            if (routePlace)
+                break;
+        }
+    }
+    if (routeIntent.test(normalized) && routePlace && routePlace.lat && routePlace.lng) {
+        return {
+            content: `¡Perfecto! Ya mismo te trazo la ruta hacia **${routePlace.name}**. 📍🗺️`,
+            metadata: {
+                action: "ROUTE",
+                placeId: routePlace.name.toLowerCase().replace(/\s+/g, '-'),
+                lat: routePlace.lat,
+                lng: routePlace.lng
+            }
+        };
+    }
     const buildLocalAnswer = async (messagesArr, normalizedMessage) => {
-        // Build context from the last 4 user messages
-        const userMessages = messagesArr.filter(m => m.role === 'user').map(m => m.content);
-        const fullContext = userMessages.slice(-4).join(' ').toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+        // Other local intents...
         const foodIntent = /comid|restaur|cenar|almorzar|desayun|merienda|menu|men[uú]|comer|sabroso|hambre|hamburguesa|pizza|carne|cafe|caf[eé]|plato|gastrono|almuerzo/;
         const partyIntent = /rumba|bar|discotec|coctel|trago|fiesta|noche|bailar|cerveza|licor|tomar|club|baile|pelea|farra/;
         const eventIntent = /event|plan|show|conciert|actividad|agenda|hacer|recomenda|sugiere|sugerencia|que hay|programa|espectaculo/;
@@ -120,8 +176,8 @@ const callAI = async (messages, dynamicContext) => {
             lng: p.longitude !== null ? Number(p.longitude) : null,
         }));
         // Route intent
-        const routePlace = knownPlaces.find((p) => fullContext.includes(p.normalizedName));
-        if (routeIntent.test(fullContext) && routePlace) {
+        const routePlace = knownPlaces.find((p) => normalizedMessage.includes(p.normalizedName));
+        if (routeIntent.test(normalizedMessage) && routePlace) {
             return {
                 content: `Perfecto, ya te estoy trazando la ruta hacia **${routePlace.name}**. 🗺️`,
                 metadata: {
@@ -164,7 +220,7 @@ const callAI = async (messages, dynamicContext) => {
             const restaurantSuggestions = knownPlaces.filter((p) => /restaurante|cafe|gastrobar|bar|comida|cena|almuerzo/.test(p.type?.toLowerCase() || "") ||
                 /la fogata|el solar gastrobar|dar papaya|cafe quindio/.test(p.normalizedName));
             if (restaurantSuggestions.length > 0) {
-                const suggestion = restaurantSuggestions.slice(0, 3).map((p) => `- **${p.name}** (${p.type || 'Restaurante'} en ${p.city || "Armenia"}): ${p.description?.substring(0, 70) || "excelente opción gastronómica"}`).join("\n");
+                const suggestion = restaurantSuggestions.slice(0, 3).map((p) => `- **${p.name}** (${p.type || 'Restaurante'} en ${p.city || "Armenia"}): ${p.description || "excelente opción gastronómica"}`).join("\n");
                 return {
                     content: `¡Se me hizo agua la boca! Mira estos planes perfectos para comer:\n\n${suggestion}\n\n¿Quieres que te trace la ruta a alguno de ellos? Solo dime "ruta a [nombre del lugar]". 😊`,
                 };
@@ -178,7 +234,7 @@ const callAI = async (messages, dynamicContext) => {
             const nightlifeSuggestions = knownPlaces.filter((p) => /bar|club|discoteca|coctel|rumba|noche/.test(p.type?.toLowerCase() || "") ||
                 /dar papaya|el bunker|la fogata|el solar gastrobar/.test(p.normalizedName));
             if (nightlifeSuggestions.length > 0) {
-                const suggestion = nightlifeSuggestions.slice(0, 2).map((p) => `- **${p.name}**: ${p.description?.substring(0, 70) || "plan bien prendido"}`).join("\n");
+                const suggestion = nightlifeSuggestions.slice(0, 2).map((p) => `- **${p.name}**: ${p.description || "plan bien prendido"}`).join("\n");
                 return {
                     content: `¡Vamos con todo esa rumba! Los spots más prendidos de la noche:\n\n${suggestion}\n\nSi quieres, te trazo la ruta a cualquiera. ¡Esta noche va a quedar! 🔥`,
                 };
@@ -199,7 +255,7 @@ const callAI = async (messages, dynamicContext) => {
             const quietSuggestions = knownPlaces.filter((p) => /cafe|parque|museo|cultura/.test(p.type?.toLowerCase() || "") ||
                 /museo del oro|cafe quindio/.test(p.normalizedName));
             if (quietSuggestions.length > 0) {
-                const suggestion = quietSuggestions.slice(0, 2).map((p) => `- **${p.name}**: ${p.description?.substring(0, 70) || "ideal para un rato tranquilo"}`).join("\n");
+                const suggestion = quietSuggestions.slice(0, 2).map((p) => `- **${p.name}**: ${p.description || "ideal para un rato tranquilo"}`).join("\n");
                 return {
                     content: `Claro que sí, si buscas un plan más relajado, te va a encantar:\n\n${suggestion}\n\n¡Avísame si quieres la ruta! ☕`,
                 };
@@ -272,15 +328,8 @@ const callAI = async (messages, dynamicContext) => {
     };
     console.log("[CHATBOT] Extracted text for logic routing:", normalized);
     // --- LOGICA DE RUTAS DINAMICA SELECTIVA (solo cuando se le pida explícitamente) ---
-    const routeTriggerKeywords = [
-        'ruta a', 'ruta al', 'como llegar a', 'como llegar al',
-        'llevame a', 'llevame al', 'llevame para', 'llevarme a', 'llevarme al',
-        'navegar a', 'trazar ruta a', 'trazar ruta al', 'como llego a', 'como llego al',
-        'como ir a', 'como ir al', 'trazame la ruta', 'trazar la ruta'
-    ];
-    const isExplicitRouteRequest = routeTriggerKeywords.some(keyword => normalized.includes(keyword)) ||
-        ((normalized.includes('ir a') || normalized.includes('ir al')) &&
-            (normalized.includes('fogata') || normalized.includes('solar') || normalized.includes('bunker') || normalized.includes('papaya') || normalized.includes('museo') || normalized.includes('parque') || normalized.includes('quindio')));
+    const routeTriggerRegex = /\b(trazar ruta a|trazar ruta al|navegar a|llevame a|llevame al|como llegar a|como llegar al)\b/;
+    const isExplicitRouteRequest = routeTriggerRegex.test(normalized) && normalized.length < 60;
     if (isExplicitRouteRequest) {
         try {
             const rawTarget = normalizeText(lastMessage)
@@ -368,14 +417,17 @@ const callAI = async (messages, dynamicContext) => {
             console.log("[CHATBOT] No valid Gemini API key — using enhanced local expert system");
             return await buildLocalAnswer(messages, normalizeText(lastMessage));
         }
-        const aiUrl = process.env.AI_API_URL || "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent";
+        const aiUrl = "https://generativelanguage.googleapis.com/v1beta/models/gemini-flash-lite-latest:generateContent";
         // Build the request URL with the API key as query parameter
         const requestUrl = `${aiUrl}?key=${encodeURIComponent(apiKey)}`;
         // Build conversation history in Gemini format
         const geminiContents = [];
         // Add conversation history (Gemini doesn't have a "system" role in contents, 
         // we prepend it as a user message)
-        const fullSystemPrompt = SYSTEM_PROMPT + (dynamicContext ? `\n\n${dynamicContext}` : "");
+        // 3. Inject REAL DB data into Gemini System Prompt so it NEVER hallucinates
+        const dbPlacesText = knownPlaces.map(p => `- ${p.name} (${p.type || 'Lugar'}): ${p.description || ''}. Dir: ${p.address}`).join("\n");
+        const contextInjection = `\n\n--- BASE DE DATOS DE UBICA2 ---\nESTOS SON LOS ÚNICOS LUGARES REALES. NO INVENTES NINGÚN OTRO LUGAR:\n${dbPlacesText}\n-------------------------------------------`;
+        const fullSystemPrompt = SYSTEM_PROMPT + contextInjection + (dynamicContext ? `\n\n${dynamicContext}` : "");
         geminiContents.push({
             role: "user",
             parts: [{ text: fullSystemPrompt + "\n\nResponde siempre siguiendo estas instrucciones." }],
@@ -403,7 +455,7 @@ const callAI = async (messages, dynamicContext) => {
                 contents: geminiContents,
                 generationConfig: {
                     temperature: 0.8,
-                    maxOutputTokens: 600,
+                    maxOutputTokens: 4096,
                     topP: 0.95,
                     topK: 40,
                 },
@@ -427,18 +479,8 @@ const callAI = async (messages, dynamicContext) => {
     }
     catch (error) {
         console.error("[CHATBOT] AI call error:", error?.message || error);
-        const localAnswer = await buildLocalAnswer(messages, normalizeText(lastMessage));
-        if (localAnswer?.content) {
-            return localAnswer;
-        }
-        if (error?.message?.includes("429")) {
-            return {
-                content: "¡Uy, qué pena! Hay mucha gente buscando planes ahora mismo y estoy un tris ocupado. Dame un segundito y vuelve a intentar. ¿Qué tipo de plan tenías en mente? 😊",
-            };
-        }
-        return {
-            content: "¡Ay, se me cruzaron los cables un momento! Tuve un pequeño fallo de conexión. Pero no te preocupes, cuéntame: ¿buscas un plan relajado, una buena rumba o comer algo delicioso? ¡Aquí estoy para ayudarte! 😊",
-        };
+        // Para diagnosticar el error exacto de Gemini, lo mostraremos temporalmente en el chat:
+        return { content: `⚠️ Error de conexión con Gemini: ${error?.message || "Error desconocido"}. Por favor, verifica tu API Key o los permisos del modelo.` };
     }
 };
 exports.callAI = callAI;
@@ -533,8 +575,8 @@ async function buildDynamicSystemContext() {
         context += "\n[REGLAS E INSTRUCCIONES CLAVE PARA TI (IA)]:\n";
         context += "1. Utiliza ÚNICAMENTE la lista anterior de establecimientos y eventos para recomendar parches. No inventes lugares.\n";
         context += "2. Si el usuario dice que tiene hambre, quiere comer algo, cenar, o almorzar, recomiéndale inmediatamente los Restaurantes de la lista anterior (como La Fogata o El Solar Gastrobar) describiendo su propuesta gastronómica con entusiasmo.\n";
-        context += "3. Si el usuario dice que quiere tomar cerveza, cocteles, salir de fiesta, de rumba, o busca planes nocturnos, recomiéndale los Bares o Discotecas de la lista anterior (como El Bunker clandestino o Dar Papaya) y descríbelos de forma muy vibrante y animada.\n";
-        context += "4. Mantén una conversación fluida, extremadamente cálida, natural, empática y con acento/personalidad de guía local colombiano. Responde a preguntas de charla comunes amigablemente antes de saltar a las recomendaciones.\n";
+        context += "3. Si el usuario busca planes nocturnos, salir de fiesta, cervezas o cocteles, recomiéndale los Bares o Discotecas de la lista anterior (como El Bunker o Dar Papaya) y descríbelos de forma muy exclusiva y atractiva.\n";
+        context += "4. Mantén una conversación fluida, elocuente y con acento/personalidad de un guía experto colombiano de alto perfil. Responde a preguntas de forma profesional y madura antes de saltar a las recomendaciones.\n";
         context += "5. Bajo ninguna circunstancia le digas al usuario 'tengo una base de datos' o 'según la lista'. Responde de forma integrada, como si fueras el habitante local más conocedor de la ciudad.\n";
         context += "6. Si el usuario te pregunta explícitamente sobre cómo llegar o te pide una ruta a un sitio, explícale que puede ingresar 'ruta a [establecimiento]' para abrir el mapa interactivo.\n";
         return context;

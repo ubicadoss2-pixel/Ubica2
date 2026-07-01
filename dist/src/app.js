@@ -21,7 +21,7 @@ const comment_routes_1 = __importDefault(require("./modules/comments/comment.rou
 const user_routes_1 = __importDefault(require("./modules/users/user.routes"));
 const preferences_routes_1 = __importDefault(require("./modules/preferences/preferences.routes"));
 const search_history_routes_1 = __importDefault(require("./modules/search-history/search-history.routes"));
-const promotions_routes_1 = __importDefault(require("./modules/promotions/promotions.routes"));
+const offers_routes_1 = __importDefault(require("./modules/offers/offers.routes"));
 const chatbot_routes_1 = __importDefault(require("./modules/chatbot/chatbot.routes"));
 const user_blocks_routes_1 = __importDefault(require("./modules/user-blocks/user-blocks.routes"));
 const history_routes_1 = __importDefault(require("./modules/history/history.routes"));
@@ -57,7 +57,7 @@ app.use("/api/reviews", comment_routes_1.default);
 app.use("/api/users", user_routes_1.default);
 app.use("/api/preferences", preferences_routes_1.default);
 app.use("/api/search-history", search_history_routes_1.default);
-app.use("/api/promotions", promotions_routes_1.default);
+app.use("/api/offers", offers_routes_1.default);
 app.use("/api/chatbot", chatbot_routes_1.default);
 app.use("/api/user-blocks", user_blocks_routes_1.default);
 app.use("/api/history", history_routes_1.default);

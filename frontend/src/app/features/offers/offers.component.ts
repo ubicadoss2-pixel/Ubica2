@@ -2,17 +2,17 @@ import { Component, inject, OnInit, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterLink } from '@angular/router';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
-import { PromotionsService } from '../../core/services/promotions.service';
+import { OffersService } from '../../core/services/offers.service';
 import { PlanFavoritesService } from '../../core/services/plan-favorites.service';
 import { AuthStoreService } from '../../core/services/auth-store.service';
 import { CommentsService } from '../../core/services/comments.service';
-import { Promotion } from '../../core/models/feature.models';
+import { Offer } from '../../core/models/feature.models';
 import { Comment } from '../../core/models/api.models';
 import { TranslatePipe } from '../../core/pipes/translate.pipe';
 import { timeout } from 'rxjs/operators';
 
 @Component({
-  selector: 'app-promotions',
+  selector: 'app-offers',
   standalone: true,
   imports: [CommonModule, RouterLink, TranslatePipe, ReactiveFormsModule],
   template: `
@@ -28,21 +28,7 @@ import { timeout } from 'rxjs/operators';
         </div>
       </section>
 
-      <!-- FILTER TABS -->
-      <section class="filter-bar" *ngIf="!loading() && promotions().length > 0">
-        <button class="filter-chip" [class.active]="activeFilter() === 'all'" (click)="setFilter('all')">
-          {{ 'Todas' | translate }}
-        </button>
-        <button class="filter-chip" [class.active]="activeFilter() === 'PERCENTAGE'" (click)="setFilter('PERCENTAGE')">
-          {{ 'Descuentos' | translate }}
-        </button>
-        <button class="filter-chip" [class.active]="activeFilter() === 'BOGO'" (click)="setFilter('BOGO')">
-          2x1
-        </button>
-        <button class="filter-chip" [class.active]="activeFilter() === 'FIXED'" (click)="setFilter('FIXED')">
-          {{ 'Precio Fijo' | translate }}
-        </button>
-      </section>
+      <!-- NO FILTERS NEEDED Anymore -->
 
       <!-- LOADING STATE -->
       <section *ngIf="loading()" class="state-container">
@@ -53,25 +39,21 @@ import { timeout } from 'rxjs/operators';
       </section>
 
       <!-- EMPTY STATE -->
-      <section *ngIf="!loading() && promotions().length === 0" class="state-container empty">
+      <section *ngIf="!loading() && offers().length === 0" class="state-container empty">
         <div class="empty-illustration">🎟️</div>
         <h3>{{ 'Sin ofertas por el momento' | translate }}</h3>
         <p>{{ 'Vuelve más tarde para descubrir nuevas sorpresas.' | translate }}</p>
       </section>
 
       <!-- OFFERS GRID -->
-      <section *ngIf="!loading() && filteredPromotions().length > 0" class="offers-section">
+      <section *ngIf="!loading() && offers().length > 0" class="offers-section">
         <div class="offers-grid">
-          <article *ngFor="let promo of filteredPromotions(); let i = index" class="offer-card">
+          <article *ngFor="let promo of offers(); let i = index" class="offer-card">
             <div class="card-visual">
-              <div class="card-img" [style.backgroundImage]="'url(' + getPromoImage(promo) + ')'"></div>
+              <div class="card-img" [style.backgroundImage]="'url(' + getOfferImage(promo) + ')'"></div>
               <div class="card-img-overlay"></div>
               <div class="card-top-row">
-                <span class="discount-pill" [class]="'type-' + promo.discountType.toLowerCase()">
-                  <span *ngIf="promo.discountType === 'PERCENTAGE'">{{ promo.discountValue }}% OFF</span>
-                  <span *ngIf="promo.discountType === 'FIXED'">{{ promo.discountValue | currency:'COP':'symbol':'1.0-0' }} OFF</span>
-                  <span *ngIf="promo.discountType === 'BOGO'">2×1</span>
-                </span>
+                <span class="discount-pill type-percentage">OFERTA</span>
               </div>
             </div>
 
@@ -81,10 +63,6 @@ import { timeout } from 'rxjs/operators';
               <p class="card-desc">{{ promo.description }}</p>
               
               <div class="card-meta-row">
-                <div class="promo-code-small" *ngIf="promo.code">
-                  <span class="code-lbl">CÓDIGO</span>
-                  <code>{{ promo.code }}</code>
-                </div>
                 <span class="validity-tag">
                   Vence: {{ promo.endDate | date:'dd MMM yyyy' }}
                 </span>
@@ -510,17 +488,15 @@ import { timeout } from 'rxjs/operators';
     }
   `]
 })
-export class PromotionsComponent implements OnInit {
-  private readonly promotionsService = inject(PromotionsService);
+export class OffersComponent implements OnInit {
+  private readonly offersService = inject(OffersService);
   private readonly planFavoritesService = inject(PlanFavoritesService);
   private readonly authStore = inject(AuthStoreService);
   private readonly commentsService = inject(CommentsService);
   private readonly fb = inject(FormBuilder);
 
   readonly loading = signal(true);
-  readonly promotions = signal<Promotion[]>([]);
-  readonly filteredPromotions = signal<Promotion[]>([]);
-  readonly activeFilter = signal<string>('all');
+  readonly offers = signal<Offer[]>([]);
   readonly favoriteIds = signal<Set<string>>(new Set());
 
   // Comments state
@@ -563,91 +539,52 @@ export class PromotionsComponent implements OnInit {
     return this.favoriteIds().has(id);
   }
 
-  getPromoImage(promo: Promotion): string {
+  getOfferImage(promo: Offer): string {
     const placeName = (promo as any).place?.name || '';
     if (this.promoImages[placeName]) {
       return this.promoImages[placeName];
     }
-    const hash = promo.id.split('').reduce((acc, char) => acc + char.charCodeAt(0), 0);
+    const hash = promo.id.split('').reduce((acc: number, char: string) => acc + char.charCodeAt(0), 0);
     return this.fallbackImages[hash % this.fallbackImages.length];
   }
 
   ngOnInit(): void {
-    this.loadPromotions();
+    this.loadOffers();
     this.loadComments();
   }
 
-  setFilter(filter: string): void {
-    this.activeFilter.set(filter);
-    this.applyFilter();
-  }
-
-  private applyFilter(): void {
-    const filter = this.activeFilter();
-    const all = this.promotions();
-    if (filter === 'all') {
-      this.filteredPromotions.set(all);
-    } else {
-      this.filteredPromotions.set(all.filter(p => p.discountType === filter));
-    }
-  }
-
-  loadPromotions(): void {
-    this.promotionsService.getActive()
+  loadOffers(): void {
+    this.offersService.getActive()
     .pipe(timeout(2000))
     .subscribe({
       next: (data) => {
-        this.promotions.set(data.items);
-        this.filteredPromotions.set(data.items);
+        this.offers.set(data.items);
         this.loading.set(false);
       },
       error: () => {
-        const mockPromotions: Promotion[] = [
+        const mockOffers: Offer[] = [
           {
             id: 'offer-1',
             title: 'Happy Hour Espectacular',
             description: '2x1 en toda la coctelería de autor y tapas gourmet. La mejor forma de empezar tu noche en Armenia.',
-            discountType: 'BOGO',
-            discountValue: 0,
             startDate: new Date().toISOString(),
             endDate: new Date('2026-06-22').toISOString(),
-            code: 'HAPPY2X1',
             place: { id: 'bunker-1', name: 'El Bunker' } as any,
             placeId: 'bunker-1',
-            currentUses: 0,
             status: 'ACTIVE',
           },
           {
             id: 'offer-2',
             title: 'Combo After Office',
             description: 'Cerveza artesanal + tabla de quesos por solo $15.000. Ideal para desconectar después del trabajo.',
-            discountType: 'FIXED',
-            discountValue: 15000,
             startDate: new Date().toISOString(),
             endDate: new Date('2026-06-18').toISOString(),
-            code: 'TERRAZA1',
             place: { id: 'terraza-1', name: 'La Terraza' } as any,
             placeId: 'terraza-1',
-            currentUses: 0,
             status: 'ACTIVE',
           },
-          {
-            id: 'offer-3',
-            title: '30% en Almuerzos Ejecutivos',
-            description: 'Disfruta del mejor almuerzo de Armenia con 30% de descuento. Incluye entrada, plato fuerte y postre.',
-            discountType: 'PERCENTAGE',
-            discountValue: 30,
-            startDate: new Date().toISOString(),
-            endDate: new Date('2026-06-30').toISOString(),
-            code: 'FOGATA30',
-            place: { id: 'fogata-1', name: 'La Fogata' } as any,
-            placeId: 'fogata-1',
-            currentUses: 0,
-            status: 'ACTIVE',
-          }
         ];
-        this.promotions.set(mockPromotions);
-        this.filteredPromotions.set(mockPromotions);
+        this.offers.set(mockOffers);
         this.loading.set(false);
       },
     });
@@ -662,7 +599,7 @@ export class PromotionsComponent implements OnInit {
     });
   }
 
-  toggleFavorite(promo: Promotion): void {
+  toggleFavorite(promo: Offer): void {
     if (this.isFavorite(promo.id)) {
       this.planFavoritesService.remove(promo.id).subscribe(() => {
         const newSet = new Set(this.favoriteIds());

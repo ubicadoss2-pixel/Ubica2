@@ -28,9 +28,9 @@ exports.createEventSchema = zod_1.z.object({
     startTime: zod_1.z.string(),
     endTime: zod_1.z.string().optional(),
     eventDate: zod_1.z.string().optional(),
-    status: zod_1.z.enum(["ACTIVE", "CANCELLED", "SUSPENDED"]).optional(),
+    status: zod_1.z.enum(["ACTIVE", "CANCELLED", "SUSPENDED", "DRAFT", "PENDING"]).optional(),
     recurrence: exports.eventRecurrenceSchema.optional(),
     specialDates: zod_1.z.array(exports.eventSpecialDateSchema).optional(),
-    photos: zod_1.z.array(zod_1.z.string().max(500)).optional(),
+    photos: zod_1.z.array(zod_1.z.string()).optional(),
 });
 exports.updateEventSchema = exports.createEventSchema.partial();

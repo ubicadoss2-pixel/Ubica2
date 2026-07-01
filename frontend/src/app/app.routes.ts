@@ -14,7 +14,11 @@ import { EventEditComponent } from './features/owner/event-edit/event-edit.compo
 import { EventListComponent } from './features/owner/event-list/event-list.component';
 import { ReportsComponent } from './features/owner/reports/reports.component';
 import { PlaceDetailComponent } from './features/place-detail/place-detail.component';
-import { PromotionsComponent } from './features/promotions/promotions.component';
+import { OfferListComponent } from './features/owner/offer-list/offer-list.component';
+import { OfferFormComponent } from './features/owner/offer-form/offer-form.component';
+import { OffersComponent } from './features/offers/offers.component';
+
+// ... (other imports stay same, I will just do a specific chunk)
 import { ChatbotComponent } from './features/chatbot/chatbot.component';
 import { authGuard, roleGuard } from './core/guards/auth.guard';
 import { ProfileComponent } from './features/profile/profile.component';
@@ -37,7 +41,7 @@ export const routes: Routes = [
       { path: 'forgot-password', component: ForgotPasswordComponent },
       { path: 'settings', component: SettingsComponent, canActivate: [authGuard] },
       { path: 'verificacion', component: VerificationComponent, canActivate: [authGuard] },
-      { path: 'promotions', component: PromotionsComponent },
+      { path: 'ofertas', component: OffersComponent },
       { path: 'chatbot', component: ChatbotComponent, canActivate: [authGuard] },
       { path: 'favorites', component: FavoritesComponent, canActivate: [authGuard] },
       { path: 'owner/places', component: PlaceListComponent, canActivate: [roleGuard('OWNER', 'ADMIN')] },
@@ -46,6 +50,9 @@ export const routes: Routes = [
       { path: 'owner/events', component: EventListComponent, canActivate: [roleGuard('OWNER', 'ADMIN')] },
       { path: 'owner/event/new', component: EventCreateComponent, canActivate: [roleGuard('OWNER', 'ADMIN')] },
       { path: 'owner/event/edit/:id', component: EventEditComponent, canActivate: [roleGuard('OWNER', 'ADMIN')] },
+      { path: 'owner/offers', component: OfferListComponent, canActivate: [roleGuard('OWNER', 'ADMIN')] },
+      { path: 'owner/offer/new', component: OfferFormComponent, canActivate: [roleGuard('OWNER', 'ADMIN')] },
+      { path: 'owner/offer/edit/:id', component: OfferFormComponent, canActivate: [roleGuard('OWNER', 'ADMIN')] },
       { path: 'owner/reports', component: ReportsComponent, canActivate: [roleGuard('OWNER', 'ADMIN')] },
       { path: 'profile', component: ProfileComponent, canActivate: [authGuard] },
       { path: 'admin', component: AdminComponent, canActivate: [roleGuard('ADMIN')] },

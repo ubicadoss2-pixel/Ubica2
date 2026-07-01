@@ -34,32 +34,18 @@ export interface SearchHistoryItem {
   createdAt: string;
 }
 
-export interface Promotion {
+export interface Offer {
   id: string;
   placeId: string;
   title: string;
   description?: string;
-  discountType: 'PERCENTAGE' | 'FIXED' | 'BOGO';
-  discountValue?: number;
-  code?: string;
-  minPurchase?: number;
-  maxUses?: number;
-  currentUses: number;
+  conditions?: string;
+  imageUrl?: string;
   startDate: string;
   endDate: string;
-  status: 'DRAFT' | 'ACTIVE' | 'PAUSED' | 'EXPIRED';
-  imageUrl?: string;
-  terms?: string;
+  status: 'ACTIVE' | 'INACTIVE';
   place?: any;
-}
-
-export interface PromotionRedemption {
-  id: string;
-  promotionId: string;
-  userId: string;
-  codeUsed?: string;
-  discountUsed?: number;
-  redeemedAt: string;
+  createdAt?: string;
 }
 
 export interface ChatMessage {

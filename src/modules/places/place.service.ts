@@ -240,7 +240,7 @@ export const getPlaceById = async (placeId: string) => {
       socialLinks: true,
       openingHours: true,
       photos: true,
-      promotions: {
+      offers: {
         where: { status: "ACTIVE" },
       },
     },

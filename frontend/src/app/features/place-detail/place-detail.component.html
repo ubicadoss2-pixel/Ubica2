@@ -76,20 +76,16 @@
     </div>
   </section>
 
-  <!-- 3.5 PROMOTIONS -->
-  <section class="card promotions" *ngIf="place.promotions && place.promotions.length > 0">
+  <!-- 3.5 OFFERS -->
+  <section class="card promotions" *ngIf="place.offers && place.offers.length > 0">
     <h2>
       <svg class="lucide lucide-zap" xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align: middle; margin-right: 0.4rem; color: var(--neon-purple);"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>
-      {{ 'Promociones Especiales' | translate }}
+      {{ 'Ofertas Especiales' | translate }}
     </h2>
     <div class="promo-list">
-      <article class="promo-item card" *ngFor="let promo of place.promotions">
+      <article class="promo-item card" *ngFor="let promo of place.offers">
         <div class="promo-header-row">
-          <span class="discount-pill" [class]="'type-' + promo.discountType.toLowerCase()">
-            <span *ngIf="promo.discountType === 'PERCENTAGE'">{{ promo.discountValue }}% OFF</span>
-            <span *ngIf="promo.discountType === 'FIXED'">{{ promo.discountValue | currency:'COP':'symbol':'1.0-0' }} OFF</span>
-            <span *ngIf="promo.discountType === 'BOGO'">2×1</span>
-          </span>
+          <span class="discount-pill type-percentage">OFERTA</span>
           <span class="status-badge" [class]="getPromoStatus(promo.startDate, promo.endDate).toLowerCase()">
             {{ getPromoStatus(promo.startDate, promo.endDate) === 'ACTIVA' ? ('Activa' | translate) : 
                getPromoStatus(promo.startDate, promo.endDate) === 'PROXIMA' ? ('Próxima' | translate) : ('Finalizada' | translate) }}
@@ -98,17 +94,6 @@
         <div class="promo-body">
           <h3>{{ promo.title }}</h3>
           <p class="promo-desc">{{ promo.description }}</p>
-          <div class="promo-dates">
-            <svg class="lucide lucide-clock" xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align: middle; margin-right: 0.25rem;"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
-            {{ 'Vigencia:' | translate }} {{ promo.startDate | date:'dd/MM/yyyy' }} al {{ promo.endDate | date:'dd/MM/yyyy' }}
-          </div>
-          <div class="promo-code-box" *ngIf="promo.code">
-            <span class="code-label">{{ 'CÓDIGO:' | translate }}</span>
-            <code class="code-value">{{ promo.code }}</code>
-            <button class="btn-copy" type="button" (click)="copyToClipboard(promo.code, promo.id)">
-              {{ copiedPromoId() === promo.id ? ('¡Copiado!' | translate) : ('Copiar' | translate) }}
-            </button>
-          </div>
         </div>
       </article>
     </div>

@@ -28,6 +28,7 @@
         <a *ngIf="authStore.isAuthenticated() && !authStore.isOwner()" routerLink="/verificacion" routerLinkActive="active" class="nav-verify" (click)="closeMenu()">Verificación</a>
         <a *ngIf="authStore.isOwner()" routerLink="/owner/places" routerLinkActive="active" class="nav-owner" (click)="closeMenu()">{{ 'Mis Lugares' | translate }}</a>
         <a *ngIf="authStore.isOwner()" routerLink="/owner/events" routerLinkActive="active" class="nav-owner" (click)="closeMenu()">{{ 'Mis Eventos' | translate }}</a>
+        <a *ngIf="authStore.isOwner()" routerLink="/owner/offers" routerLinkActive="active" class="nav-owner" (click)="closeMenu()">{{ 'Mis Ofertas' | translate }}</a>
         <a *ngIf="authStore.isOwner()" routerLink="/owner/reports" routerLinkActive="active" class="nav-owner" (click)="closeMenu()">{{ 'Reportes' | translate }}</a>
         <a *ngIf="authStore.isAdmin()" routerLink="/admin" routerLinkActive="active" class="nav-admin" (click)="closeMenu()">Admin</a>
       </nav>

@@ -73,7 +73,6 @@ model User {
   favorites            Favorite[]
   passwordResetTokens  PasswordResetToken[]
   places               Place[]                @relation("PlaceOwner")
-  promotionRedemptions PromotionRedemption[]
   reports              Report[]
   searchHistory        SearchHistory[]
   blockedUsers         UserBlock[]            @relation("BlockedRelation")
@@ -147,7 +146,7 @@ model Place {
   city           City              @relation(fields: [cityId], references: [id])
   ownerUser      User?             @relation("PlaceOwner", fields: [ownerUserId], references: [id])
   placeType      PlaceType         @relation(fields: [placeTypeId], references: [id])
-  promotions     Promotion[]
+  offers         Offer[]
   reports        Report[]
 
   @@unique([cityId, slug])
@@ -455,47 +454,25 @@ model PasswordResetToken {
   @@map("password_reset_tokens")
 }
 
-model Promotion {
-  id            String                @id @default(uuid())
-  placeId       String                @map("place_id")
-  title         String                @db.VarChar(200)
-  description   String?               @db.Text
-  discountType  String                @map("discount_type") @db.VarChar(20)
-  discountValue Decimal?              @map("discount_value") @db.Decimal(10, 2)
-  code          String?               @unique @db.VarChar(50)
-  minPurchase   Decimal?              @map("min_purchase") @db.Decimal(10, 2)
-  maxUses       Int?                  @map("max_uses")
-  currentUses   Int                   @default(0) @map("current_uses")
-  startDate     DateTime              @map("start_date")
-  endDate       DateTime              @map("end_date")
-  status        PromotionStatus       @default(DRAFT)
-  imageUrl      String?               @map("image_url")
-  terms         String?               @db.Text
-  createdAt     DateTime              @default(now()) @map("created_at")
-  updatedAt     DateTime              @updatedAt @map("updated_at")
-  deletedAt     DateTime?             @map("deleted_at")
-  redemptions   PromotionRedemption[]
-  place         Place                 @relation(fields: [placeId], references: [id], onDelete: Cascade)
+model Offer {
+  id          String      @id @default(uuid())
+  placeId     String      @map("place_id")
+  title       String      @db.VarChar(200)
+  description String?     @db.Text
+  conditions  String?     @db.Text
+  imageUrl    String?     @map("image_url")
+  startDate   DateTime    @map("start_date")
+  endDate     DateTime    @map("end_date")
+  status      OfferStatus @default(ACTIVE)
+  createdAt   DateTime    @default(now()) @map("created_at")
+  updatedAt   DateTime    @updatedAt @map("updated_at")
+  
+  place       Place       @relation(fields: [placeId], references: [id], onDelete: Cascade)
 
   @@index([placeId])
   @@index([status])
   @@index([startDate, endDate])
-  @@map("promotions")
-}
-
-model PromotionRedemption {
-  id           String    @id @default(uuid())
-  promotionId  String    @map("promotion_id")
-  userId       String    @map("user_id")
-  codeUsed     String?   @map("code_used") @db.VarChar(50)
-  discountUsed Decimal?  @map("discount_used") @db.Decimal(10, 2)
-  redeemedAt   DateTime  @default(now()) @map("redeemed_at")
-  promotion    Promotion @relation(fields: [promotionId], references: [id], onDelete: Cascade)
-  user         User      @relation(fields: [userId], references: [id], onDelete: Cascade)
-
-  @@index([promotionId])
-  @@index([userId])
-  @@map("promotion_redemptions")
+  @@map("offers")
 }
 
 model ChatConversation {
@@ -625,9 +602,7 @@ enum AnalyticsEventType {
   REPORT_CREATE
 }
 
-enum PromotionStatus {
-  DRAFT
+enum OfferStatus {
   ACTIVE
-  PAUSED
-  EXPIRED
+  INACTIVE
 }
