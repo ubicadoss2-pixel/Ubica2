@@ -82,6 +82,7 @@ model User {
   preferences          UserPreference[]
   userRoles            UserRole[]
   verifications        Verification[]
+  reservations         Reservation[]
 
   @@map("users")
 }
@@ -148,6 +149,7 @@ model Place {
   placeType      PlaceType         @relation(fields: [placeTypeId], references: [id])
   offers         Offer[]
   reports        Report[]
+  reservations   Reservation[]
 
   @@unique([cityId, slug])
   @@index([cityId, placeTypeId])
@@ -527,6 +529,27 @@ model PaymentTransaction {
   @@index([userId])
   @@index([targetId])
   @@map("payment_transactions")
+}
+
+model Reservation {
+  id           String   @id @default(uuid())
+  placeId      String   @map("place_id")
+  userId       String?  @map("user_id")
+  guestName    String   @map("guest_name") @db.VarChar(200)
+  date         String   @db.VarChar(50)
+  time         String   @db.VarChar(50)
+  guests       Int
+  reason       String?  @db.VarChar(100)
+  observations String?  @db.Text
+  createdAt    DateTime @default(now()) @map("created_at")
+  updatedAt    DateTime @updatedAt @map("updated_at")
+
+  place        Place    @relation(fields: [placeId], references: [id], onDelete: Cascade)
+  user         User?    @relation(fields: [userId], references: [id], onDelete: SetNull)
+
+  @@index([placeId])
+  @@index([userId])
+  @@map("reservations")
 }
 
 enum PlaceStatus {

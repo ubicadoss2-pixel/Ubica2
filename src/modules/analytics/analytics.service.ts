@@ -16,13 +16,15 @@ export const createAnalyticsEvent = async (data: CreateAnalyticsDTO, userId?: st
 export const summaryAnalytics = async (ownerId?: string) => {
   const wherePlace = ownerId ? { ownerUserId: ownerId } : {};
   const whereEvent = ownerId ? { place: { ownerUserId: ownerId } } : {};
+  const whereOffer = ownerId ? { place: { ownerUserId: ownerId } } : {};
+  const whereReservation = ownerId ? { place: { ownerUserId: ownerId } } : {};
   const whereAnalyticsPlace = ownerId ? { place: { ownerUserId: ownerId } } : {};
   const whereAnalyticsEvent = ownerId ? { event: { place: { ownerUserId: ownerId } } } : {};
 
   const [
     placeViews, eventViews, contactClicks, favoriteAdds, favoriteRemoves, reportCreates,
     totalUsers, totalPlaces, activePlaces, totalEvents, activeEvents, finishedEvents,
-    totalFavorites, reviewsCount, averageRating
+    totalFavorites, reviewsCount, averageRating, activeOffers, totalReservations
   ] = await Promise.all([
     prisma.analyticsEvent.count({ where: { eventType: "PLACE_VIEW", ...whereAnalyticsPlace } as any }),
     prisma.analyticsEvent.count({ where: { eventType: "EVENT_VIEW", ...whereAnalyticsEvent } as any }),
@@ -51,6 +53,9 @@ export const summaryAnalytics = async (ownerId?: string) => {
       where: { deletedAt: null, rating: { not: null }, ...(ownerId ? { place: { ownerUserId: ownerId } } : {}) },
       _avg: { rating: true }
     }).then(res => res._avg.rating || 0),
+
+    prisma.offer.count({ where: { status: "ACTIVE", ...whereOffer } }),
+    prisma.reservation.count({ where: { ...whereReservation } })
   ]);
 
   let usersByType: any[] = [];
@@ -96,6 +101,8 @@ export const summaryAnalytics = async (ownerId?: string) => {
     totalFavorites,
     reviewsCount,
     averageRating: parseFloat((averageRating as number).toFixed(1)),
+    activeOffers,
+    totalReservations,
     usersByType,
     rawEvents
   };
