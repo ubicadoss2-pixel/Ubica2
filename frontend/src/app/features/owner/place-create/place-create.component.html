@@ -171,13 +171,13 @@
           </div>
         </div>
         <div class="form-body" formArrayName="openingHours">
-          <div class="schedule-day" *ngFor="let day of daysOfWeek; let i = index" [formGroupName]="i" [class.is-closed]="form.get('openingHours')?.value[i]?.isClosed">
+          <div class="schedule-day" *ngFor="let day of daysOfWeek; let i = index" [formGroupName]="i" [class.is-closed]="form.get('openingHours')?.value?.[i]?.isClosed">
             <div class="day-label">{{ day.label }}</div>
             <div class="day-inputs">
               <label class="checkbox-label">
                 <input type="checkbox" formControlName="isClosed"> Cerrado
               </label>
-              <ng-container *ngIf="!form.get('openingHours')?.value[i]?.isClosed">
+              <ng-container *ngIf="!form.get('openingHours')?.value?.[i]?.isClosed">
                 <input type="time" formControlName="openTime" class="modern-input time-input">
                 <span class="time-sep"> - </span>
                 <input type="time" formControlName="closeTime" class="modern-input time-input">
