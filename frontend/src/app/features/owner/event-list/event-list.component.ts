@@ -92,17 +92,6 @@ import { SkeletonComponent } from '../../../shared/components/skeleton/skeleton.
               </svg>
               Eliminar
             </button>
-          </div>
-          <div class="event-promote">
-            <button *ngIf="!event.isSponsored" class="btn-promote" (click)="promoteEvent(event.id)">
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="margin-right: 4px; vertical-align: text-bottom;"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
-              Destacar ($10.000)
-            </button>
-            <span *ngIf="event.isSponsored" class="sponsored-badge">
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="margin-right: 4px; vertical-align: text-bottom;"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
-              Destacado
-            </span>
-          </div>
   `,
   styles: [`
     .events-page {
@@ -274,22 +263,6 @@ import { SkeletonComponent } from '../../../shared/components/skeleton/skeleton.
       }
     }
 
-    .event-promote {
-      padding: 0 1rem 1rem;
-      display: flex; justify-content: center;
-
-      .btn-promote {
-        width: 100%; padding: 0.5rem;
-        border-radius: 8px; border: none;
-        background: linear-gradient(135deg, var(--identity-glow) 0%, #7c3aed 100%);
-        color: white; font-weight: 600; cursor: pointer;
-        transition: transform 0.2s;
-        &:hover { transform: scale(1.02); }
-      }
-
-      .sponsored-badge { color: #7c3aed; font-weight: bold; font-size: 0.9rem; }
-    }
-
     @media (max-width: 768px) {
       .events-page {
         padding: 1rem;
@@ -397,36 +370,5 @@ export class EventListComponent implements OnInit {
         this.notificationService.error('Error', 'No se pudo eliminar el evento');
       }
     });
-  }
-
-  async promoteEvent(id: string) {
-    if (confirm('¿Simular pago de $10.000 para destacar este evento por 30 días?')) {
-      try {
-        const token = localStorage.getItem('ubica2_access_token') || localStorage.getItem('access_token');
-        const apiUrl = this.eventsService['baseUrl'] || 'http://localhost:3000/api';
-        const res = await fetch(`${apiUrl}/payments/promote`, {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'Authorization': 'Bearer ' + token
-          },
-          body: JSON.stringify({ targetType: 'EVENT', targetId: id })
-        });
-        if (res.ok) {
-          this.notificationService.success('Promoción', '¡Evento destacado con éxito!');
-          this.events.update(events => events.map(e => e.id === id ? { ...e, isSponsored: true } : e));
-        } else {
-          const err = await res.json();
-          if (err.error === 'Evento no encontrado' && id.includes('mock')) {
-            this.notificationService.success('Simulación', '¡Evento destacado con éxito!');
-            this.events.update(events => events.map(e => e.id === id ? { ...e, isSponsored: true } : e));
-          } else {
-            this.notificationService.error('Error', 'Error al solicitar la promoción. ' + (err.error?.message || ''));
-          }
-        }
-      } catch (e) {
-        this.notificationService.error('Error', 'Error de conexión');
-      }
-    }
   }
 }

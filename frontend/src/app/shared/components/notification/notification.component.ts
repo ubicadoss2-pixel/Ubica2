@@ -150,15 +150,30 @@ import { NotificationService, AppNotification } from '../../../core/services/not
 
     @media (max-width: 600px) {
       .notification-container {
-        top: 80px;
+        top: 70px;
         bottom: unset;
-        right: 16px;
-        left: 16px;
-        align-items: stretch;
+        right: 5%;
+        left: 5%;
+        width: 90%;
+        align-items: center;
       }
       .notification-toast {
         min-width: unset;
-        max-width: unset;
+        max-width: 100%;
+        width: 100%;
+        padding: 10px 14px;
+        gap: 8px;
+        border-radius: 8px;
+      }
+      .notification-toast .icon svg {
+        width: 16px;
+        height: 16px;
+      }
+      .content strong {
+        font-size: 0.85rem;
+      }
+      .content p {
+        font-size: 0.75rem;
       }
     }
   `]

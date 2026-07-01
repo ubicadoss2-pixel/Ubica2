@@ -39,10 +39,15 @@ export class FavoritesComponent {
   }
 
   routeTo(place: any): void {
-    if (place.latitude && place.longitude) {
-      window.open(`https://www.google.com/maps/dir/?api=1&destination=${place.latitude},${place.longitude}`, '_blank');
-    } else if (place.addressLine) {
-      window.open(`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(place.addressLine + ', ' + (place.city?.name || 'Armenia'))}`, '_blank');
+    if (place.id) {
+      this.router.navigate(['/'], {
+        queryParams: {
+          placeId: place.id,
+          lat: place.latitude,
+          lng: place.longitude,
+          route: 'true'
+        }
+      });
     }
   }
 
