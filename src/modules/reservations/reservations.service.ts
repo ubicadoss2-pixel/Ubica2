@@ -1,4 +1,4 @@
-import { prisma } from "../../server";
+import { prisma } from "../../config/prisma";
 
 export const createReservation = async (data: any) => {
   return prisma.reservation.create({

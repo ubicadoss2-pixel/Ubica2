@@ -17,9 +17,11 @@ exports.createAnalyticsEvent = createAnalyticsEvent;
 const summaryAnalytics = async (ownerId) => {
     const wherePlace = ownerId ? { ownerUserId: ownerId } : {};
     const whereEvent = ownerId ? { place: { ownerUserId: ownerId } } : {};
+    const whereOffer = ownerId ? { place: { ownerUserId: ownerId } } : {};
+    const whereReservation = ownerId ? { place: { ownerUserId: ownerId } } : {};
     const whereAnalyticsPlace = ownerId ? { place: { ownerUserId: ownerId } } : {};
     const whereAnalyticsEvent = ownerId ? { event: { place: { ownerUserId: ownerId } } } : {};
-    const [placeViews, eventViews, contactClicks, favoriteAdds, favoriteRemoves, reportCreates, totalUsers, totalPlaces, activePlaces, totalEvents, activeEvents, finishedEvents, totalFavorites, reviewsCount, averageRating] = await Promise.all([
+    const [placeViews, eventViews, contactClicks, favoriteAdds, favoriteRemoves, reportCreates, totalUsers, totalPlaces, activePlaces, totalEvents, activeEvents, finishedEvents, totalFavorites, reviewsCount, averageRating, activeOffers, totalReservations] = await Promise.all([
         prisma_1.prisma.analyticsEvent.count({ where: { eventType: "PLACE_VIEW", ...whereAnalyticsPlace } }),
         prisma_1.prisma.analyticsEvent.count({ where: { eventType: "EVENT_VIEW", ...whereAnalyticsEvent } }),
         prisma_1.prisma.analyticsEvent.count({ where: { eventType: "CONTACT_CLICK", ...whereAnalyticsPlace } }),
@@ -44,6 +46,8 @@ const summaryAnalytics = async (ownerId) => {
             where: { deletedAt: null, rating: { not: null }, ...(ownerId ? { place: { ownerUserId: ownerId } } : {}) },
             _avg: { rating: true }
         }).then(res => res._avg.rating || 0),
+        prisma_1.prisma.offer.count({ where: { status: "ACTIVE", ...whereOffer } }),
+        prisma_1.prisma.reservation.count({ where: { ...whereReservation } })
     ]);
     let usersByType = [];
     if (!ownerId) {
@@ -85,6 +89,8 @@ const summaryAnalytics = async (ownerId) => {
         totalFavorites,
         reviewsCount,
         averageRating: parseFloat(averageRating.toFixed(1)),
+        activeOffers,
+        totalReservations,
         usersByType,
         rawEvents
     };
