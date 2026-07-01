@@ -292,8 +292,8 @@ export class PlaceCreateComponent implements OnInit, AfterViewInit {
       .filter((h: any) => h.isClosed || (h.openTime && h.closeTime))
       .map((h: any) => ({
         weekday: h.weekday,
-        openTime: h.isClosed ? null : h.openTime,
-        closeTime: h.isClosed ? null : h.closeTime,
+        openTime: h.isClosed ? undefined : (h.openTime || undefined),
+        closeTime: h.isClosed ? undefined : (h.closeTime || undefined),
         isClosed: h.isClosed
       }));
 

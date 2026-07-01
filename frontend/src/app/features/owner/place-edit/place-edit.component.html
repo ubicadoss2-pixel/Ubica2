@@ -204,8 +204,24 @@
         </div>
 
         <div class="form-body">
-          <div class="upload-area">
-            <input type="url" #photoInput placeholder="Pega la URL de la imagen..." class="modern-input" (keyup.enter)="addPhoto(photoInput.value); photoInput.value = ''" />
+          <div 
+            class="drag-drop-zone upload-area" 
+            [class.drag-over]="isDragOver()"
+            (dragover)="onDragOver($event)"
+            (dragleave)="onDragLeave($event)"
+            (drop)="onDrop($event)"
+            (click)="fileInputPlaces.click()">
+            <input type="file" #fileInputPlaces hidden accept="image/*" (change)="onFileSelected($event)">
+            <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/>
+              <polyline points="17 8 12 3 7 8"/>
+              <line x1="12" y1="3" x2="12" y2="15"/>
+            </svg>
+            <p>Arrastra una imagen o haz clic para buscar</p>
+          </div>
+          <!-- Keep old URL input just in case they prefer URLs occasionally -->
+          <div style="margin-top: 1rem; display: flex; gap: 0.5rem;" *ngIf="false">
+            <input type="url" #photoInput placeholder="O pega una URL..." class="modern-input" />
             <button type="button" class="add-btn" (click)="addPhoto(photoInput.value); photoInput.value = ''">
               <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                 <line x1="12" y1="5" x2="12" y2="19"/>

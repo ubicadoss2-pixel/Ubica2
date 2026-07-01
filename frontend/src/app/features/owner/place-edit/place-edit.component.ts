@@ -37,6 +37,7 @@ export class PlaceEditComponent implements OnInit, AfterViewInit {
   readonly myPlan = signal<UserPlan | null>(null);
   readonly maxPhotos = signal(3);
   readonly photos = signal<string[]>([]);
+  readonly isDragOver = signal(false);
 
   private map?: L.Map;
   private marker?: L.Marker;
@@ -280,6 +281,32 @@ export class PlaceEditComponent implements OnInit, AfterViewInit {
     this.photos.update(p => p.filter((_, i) => i !== index));
   }
 
+  onDragOver(event: DragEvent) {
+    event.preventDefault();
+    this.isDragOver.set(true);
+  }
+
+  onDragLeave(event: DragEvent) {
+    event.preventDefault();
+    this.isDragOver.set(false);
+  }
+
+  onDrop(event: DragEvent) {
+    event.preventDefault();
+    this.isDragOver.set(false);
+    const files = event.dataTransfer?.files;
+    if (files && files.length > 0) {
+      this.handleFile(files[0]);
+    }
+  }
+
+  onFileSelected(event: Event) {
+    const input = event.target as HTMLInputElement;
+    if (input.files && input.files.length > 0) {
+      this.handleFile(input.files[0]);
+    }
+  }
+
   submit(): void {
     if (this.form.invalid) {
       this.form.markAllAsTouched();
@@ -321,8 +348,8 @@ export class PlaceEditComponent implements OnInit, AfterViewInit {
       .filter((h: any) => h.isClosed || (h.openTime && h.closeTime))
       .map((h: any) => ({
         weekday: h.weekday,
-        openTime: h.isClosed ? null : h.openTime,
-        closeTime: h.isClosed ? null : h.closeTime,
+        openTime: h.isClosed ? undefined : (h.openTime || undefined),
+        closeTime: h.isClosed ? undefined : (h.closeTime || undefined),
         isClosed: h.isClosed
       }));
 
