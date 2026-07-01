@@ -25,6 +25,7 @@ import reservationRoutes from "./modules/reservations/reservations.routes";
 import { errorHandler, notFound } from "./shared/middlewares/error.middleware";
 
 const app = express();
+app.set("trust proxy", 1);
 
 app.use(cors({ origin: "*" }));
 app.use(
