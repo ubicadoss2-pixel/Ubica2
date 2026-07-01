@@ -47,6 +47,36 @@ import { Offer } from '../../../core/models/feature.models';
             <label for="conditions">Condiciones (Opcional)</label>
             <textarea id="conditions" formControlName="conditions" class="form-control" rows="2" placeholder="Ej: Válido solo de lunes a jueves"></textarea>
           </div>
+
+          <div class="form-group">
+            <label>Imagen de la Oferta (Opcional)</label>
+            <div class="image-upload-area"
+                 [class.drag-over]="isDragOver()"
+                 (dragover)="onDragOver($event)"
+                 (dragleave)="onDragLeave($event)"
+                 (drop)="onDrop($event)">
+              
+              <div class="upload-placeholder" *ngIf="!imageUrl()">
+                <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <rect x="3" y="3" width="18" height="18" rx="2" ry="2"/>
+                  <circle cx="8.5" cy="8.5" r="1.5"/>
+                  <polyline points="21 15 16 10 5 21"/>
+                </svg>
+                <p>Arrastra una imagen o <span>explora</span></p>
+                <input type="file" accept="image/*" (change)="onFileSelected($event)">
+              </div>
+
+              <div class="image-preview" *ngIf="imageUrl()">
+                <img [src]="imageUrl()" alt="Preview">
+                <button type="button" class="btn-remove-img" (click)="removeImage()" title="Eliminar imagen">
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <line x1="18" y1="6" x2="6" y2="18"></line>
+                    <line x1="6" y1="6" x2="18" y2="18"></line>
+                  </svg>
+                </button>
+              </div>
+            </div>
+          </div>
         </div>
 
         <div class="form-section">
@@ -153,6 +183,64 @@ import { Offer } from '../../../core/models/feature.models';
 
     textarea.form-control { resize: vertical; }
 
+    .image-upload-area {
+      border: 2px dashed var(--border-quiet);
+      border-radius: 12px;
+      padding: 2rem;
+      text-align: center;
+      background: var(--surface-soft);
+      transition: all 0.2s;
+      position: relative;
+      
+      &.drag-over {
+        border-color: var(--identity-glow);
+        background: rgba(124, 58, 237, 0.05);
+      }
+      
+      .upload-placeholder {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 0.5rem;
+        color: var(--text-secondary);
+        
+        svg { color: var(--border-quiet); }
+        span { color: var(--identity-glow); font-weight: 600; cursor: pointer; }
+        input[type="file"] {
+          position: absolute;
+          inset: 0;
+          opacity: 0;
+          cursor: pointer;
+        }
+      }
+
+      .image-preview {
+        position: relative;
+        display: inline-block;
+        border-radius: 8px;
+        overflow: hidden;
+        border: 1px solid var(--border-quiet);
+        max-width: 100%;
+        max-height: 200px;
+        
+        img { width: 100%; height: 100%; object-fit: contain; display: block; }
+        
+        .btn-remove-img {
+          position: absolute;
+          top: 0.5rem; right: 0.5rem;
+          background: rgba(0,0,0,0.5);
+          color: white;
+          border: none;
+          border-radius: 50%;
+          width: 24px; height: 24px;
+          display: flex; align-items: center; justify-content: center;
+          cursor: pointer;
+          transition: background 0.2s;
+          &:hover { background: #dc2626; }
+        }
+      }
+    }
+
     .error-banner {
       background: #fee2e2;
       color: #dc2626;
@@ -230,6 +318,8 @@ export class OfferFormComponent implements OnInit {
   readonly loading = signal(false);
   readonly error = signal<string | null>(null);
   readonly places = signal<Array<{ id: string; name: string }>>([]);
+  readonly imageUrl = signal<string | null>(null);
+  readonly isDragOver = signal(false);
   
   private offerId: string | null = null;
 
@@ -263,6 +353,86 @@ export class OfferFormComponent implements OnInit {
     }
   }
 
+  onDragOver(event: DragEvent) {
+    event.preventDefault();
+    this.isDragOver.set(true);
+  }
+
+  onDragLeave(event: DragEvent) {
+    event.preventDefault();
+    this.isDragOver.set(false);
+  }
+
+  onDrop(event: DragEvent) {
+    event.preventDefault();
+    this.isDragOver.set(false);
+    const files = event.dataTransfer?.files;
+    if (files && files.length > 0) {
+      this.handleFile(files[0]);
+    }
+  }
+
+  onFileSelected(event: Event) {
+    const input = event.target as HTMLInputElement;
+    if (input.files && input.files.length > 0) {
+      this.handleFile(input.files[0]);
+    }
+  }
+
+  private handleFile(file: File) {
+    if (!file.type.startsWith('image/')) {
+      this.error.set('Solo se permiten imágenes');
+      return;
+    }
+
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      const base64Url = e.target?.result as string;
+      const img = new Image();
+      img.onload = () => {
+        const canvas = document.createElement('canvas');
+        const MAX_WIDTH = 1200;
+        const MAX_HEIGHT = 1200;
+        let width = img.width;
+        let height = img.height;
+
+        if (width > height) {
+          if (width > MAX_WIDTH) {
+            height *= MAX_WIDTH / width;
+            width = MAX_WIDTH;
+          }
+        } else {
+          if (height > MAX_HEIGHT) {
+            width *= MAX_HEIGHT / height;
+            height = MAX_HEIGHT;
+          }
+        }
+
+        canvas.width = width;
+        canvas.height = height;
+        const ctx = canvas.getContext('2d');
+        if (ctx) {
+          ctx.drawImage(img, 0, 0, width, height);
+          this.imageUrl.set(canvas.toDataURL('image/jpeg', 0.8));
+        } else {
+          this.imageUrl.set(base64Url);
+        }
+      };
+      img.onerror = () => {
+        this.imageUrl.set(base64Url);
+      };
+      img.src = base64Url;
+    };
+    reader.onerror = () => {
+      this.error.set('No se pudo leer la imagen');
+    };
+    reader.readAsDataURL(file);
+  }
+
+  removeImage() {
+    this.imageUrl.set(null);
+  }
+
   private loadPlaces() {
     const user = this.authStore.user();
     if (user) {
@@ -288,6 +458,9 @@ export class OfferFormComponent implements OnInit {
             endDate: new Date(offer.endDate).toISOString().slice(0, 16),
             isActive: offer.status === 'ACTIVE'
           });
+          if (offer.imageUrl) {
+            this.imageUrl.set(offer.imageUrl);
+          }
         } else {
           this.error.set('Oferta no encontrada.');
         }
@@ -316,6 +489,7 @@ export class OfferFormComponent implements OnInit {
       title: formVal.title,
       description: formVal.description,
       conditions: formVal.conditions,
+      imageUrl: this.imageUrl() || '',
       startDate: new Date(formVal.startDate).toISOString(),
       endDate: new Date(formVal.endDate).toISOString(),
       status: formVal.isActive ? 'ACTIVE' : 'INACTIVE'

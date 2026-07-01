@@ -23,7 +23,7 @@
         </a>
         <a routerLink="/agenda" routerLinkActive="active" (click)="closeMenu()">{{ 'Eventos' | translate }}</a>
         <a *ngIf="authStore.isAuthenticated()" routerLink="/favorites" routerLinkActive="active" (click)="closeMenu()">{{ 'Favoritos' | translate }}</a>
-        <a routerLink="/promotions" routerLinkActive="active" class="nav-promo" (click)="closeMenu()">{{ 'Ofertas' | translate }}</a>
+        <a routerLink="/ofertas" routerLinkActive="active" class="nav-promo" (click)="closeMenu()">{{ 'Ofertas' | translate }}</a>
         <a *ngIf="authStore.isAuthenticated()" routerLink="/profile" routerLinkActive="active" class="nav-profile" (click)="closeMenu()">{{ 'Mi Perfil' | translate }}</a>
         <a *ngIf="authStore.isAuthenticated() && !authStore.isOwner()" routerLink="/verificacion" routerLinkActive="active" class="nav-verify" (click)="closeMenu()">Verificación</a>
         <a *ngIf="authStore.isOwner()" routerLink="/owner/places" routerLinkActive="active" class="nav-owner" (click)="closeMenu()">{{ 'Mis Lugares' | translate }}</a>
