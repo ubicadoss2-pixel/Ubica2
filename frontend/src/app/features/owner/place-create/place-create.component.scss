@@ -726,3 +726,49 @@ hr {
     flex: 1;
   }
 }
+
+// Schedule Styles
+.schedule-day {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0.75rem 0;
+  border-bottom: 1px solid var(--border-quiet);
+  
+  &:last-child {
+    border-bottom: none;
+  }
+
+  .day-label {
+    font-weight: 600;
+    width: 90px;
+    color: var(--ink-primary);
+  }
+
+  .day-inputs {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    flex: 1;
+    justify-content: flex-end;
+  }
+
+  .checkbox-label {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    cursor: pointer;
+    margin-right: auto;
+    font-size: 0.9rem;
+    color: var(--text-secondary);
+  }
+
+  .time-input {
+    width: auto;
+    padding: 0.5rem;
+  }
+
+  .time-sep {
+    color: var(--text-muted);
+  }
+}

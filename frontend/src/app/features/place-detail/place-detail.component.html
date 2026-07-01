@@ -50,15 +50,20 @@
 
     <article class="card panel">
       <h2>{{ 'Horarios de Atención' | translate }}</h2>
-      <ul class="hours-list" style="display: grid; grid-template-columns: 1fr; gap: 0.8rem; padding: 0; list-style: none;">
-        <li *ngFor="let hour of place.openingHours" style="display: flex; justify-content: space-between; padding: 0.8rem 1rem; background: var(--surface-soft); border-radius: 8px; align-items: center; border: 1px solid var(--border-quiet);">
-          <strong style="color: var(--ink-primary); font-weight: 600;">{{ getWeekdayName(hour.weekday) }}</strong>
-          <span *ngIf="!hour.isClosed" style="font-family: monospace; font-size: 1.05rem; color: var(--text-secondary);">
-            {{ (hour.openTime | date:'HH:mm':'UTC') || '--' }} - {{ (hour.closeTime | date:'HH:mm':'UTC') || '--' }}
-          </span>
-          <span *ngIf="hour.isClosed" class="closed-tag" style="background: var(--error-bg); color: var(--error-text); padding: 0.3rem 0.8rem; border-radius: 12px; font-size: 0.85rem; font-weight: bold;">{{ 'Cerrado' | translate }}</span>
-        </li>
-      </ul>
+      <div *ngIf="place.openingHours && place.openingHours.length > 0; else noHoursTpl">
+        <ul class="hours-list" style="display: grid; grid-template-columns: 1fr; gap: 0.8rem; padding: 0; list-style: none;">
+          <li *ngFor="let hour of place.openingHours" style="display: flex; justify-content: space-between; padding: 0.8rem 1rem; background: var(--surface-soft); border-radius: 8px; align-items: center; border: 1px solid var(--border-quiet);">
+            <strong style="color: var(--ink-primary); font-weight: 600;">{{ getWeekdayName(hour.weekday) }}</strong>
+            <span *ngIf="!hour.isClosed" style="font-family: monospace; font-size: 1.05rem; color: var(--text-secondary);">
+              {{ (hour.openTime | date:'HH:mm':'UTC') || '--' }} - {{ (hour.closeTime | date:'HH:mm':'UTC') || '--' }}
+            </span>
+            <span *ngIf="hour.isClosed" class="closed-tag" style="background: var(--error-bg); color: var(--error-text); padding: 0.3rem 0.8rem; border-radius: 12px; font-size: 0.85rem; font-weight: bold;">{{ 'Cerrado' | translate }}</span>
+          </li>
+        </ul>
+      </div>
+      <ng-template #noHoursTpl>
+        <p style="color: var(--text-secondary); padding: 1rem 0;">{{ 'Horario no registrado.' | translate }}</p>
+      </ng-template>
     </article>
   </section>
 

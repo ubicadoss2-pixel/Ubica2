@@ -156,6 +156,37 @@
         </div>
       </div>
 
+      <!-- Tarjeta de Horarios -->
+      <div class="form-card schedule-info">
+        <div class="card-header">
+          <div class="icon-box warning" style="background: #f59e0b;">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <circle cx="12" cy="12" r="10"/>
+              <polyline points="12 6 12 12 16 14"/>
+            </svg>
+          </div>
+          <div>
+            <h2>Horario de atención</h2>
+            <span class="subtitle">Horarios de apertura y cierre</span>
+          </div>
+        </div>
+        <div class="form-body" formArrayName="openingHours">
+          <div class="schedule-day" *ngFor="let day of daysOfWeek; let i = index" [formGroupName]="i" [class.is-closed]="form.get('openingHours')?.value[i]?.isClosed">
+            <div class="day-label">{{ day.label }}</div>
+            <div class="day-inputs">
+              <label class="checkbox-label">
+                <input type="checkbox" formControlName="isClosed"> Cerrado
+              </label>
+              <ng-container *ngIf="!form.get('openingHours')?.value[i]?.isClosed">
+                <input type="time" formControlName="openTime" class="modern-input time-input">
+                <span class="time-sep"> - </span>
+                <input type="time" formControlName="closeTime" class="modern-input time-input">
+              </ng-container>
+            </div>
+          </div>
+        </div>
+      </div>
+
       <!-- Tarjeta de Fotos -->
       <div class="form-card photos-info">
         <div class="card-header">

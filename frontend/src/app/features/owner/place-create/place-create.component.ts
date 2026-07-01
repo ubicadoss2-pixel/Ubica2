@@ -40,6 +40,16 @@ export class PlaceCreateComponent implements OnInit, AfterViewInit {
   private map?: L.Map;
   private marker?: L.Marker;
 
+  readonly daysOfWeek = [
+    { value: 1, label: 'Lunes' },
+    { value: 2, label: 'Martes' },
+    { value: 3, label: 'Miércoles' },
+    { value: 4, label: 'Jueves' },
+    { value: 5, label: 'Viernes' },
+    { value: 6, label: 'Sábado' },
+    { value: 0, label: 'Domingo' }
+  ];
+
   readonly form = this.fb.nonNullable.group({
     cityId: ['', Validators.required],
     placeTypeId: ['', Validators.required],
@@ -53,6 +63,14 @@ export class PlaceCreateComponent implements OnInit, AfterViewInit {
     status: ['PUBLISHED'],
     contactValue: [''],
     contactType: ['PHONE'],
+    openingHours: this.fb.array(
+      this.daysOfWeek.map(d => this.fb.group({
+        weekday: [d.value],
+        openTime: [''],
+        closeTime: [''],
+        isClosed: [false]
+      }))
+    )
   });
 
   constructor() {
@@ -268,6 +286,16 @@ export class PlaceCreateComponent implements OnInit, AfterViewInit {
         },
       ];
     }
+
+    const rawOpeningHours = this.form.get('openingHours')?.value || [];
+    payload.openingHours = rawOpeningHours
+      .filter((h: any) => h.isClosed || (h.openTime && h.closeTime))
+      .map((h: any) => ({
+        weekday: h.weekday,
+        openTime: h.isClosed ? null : h.openTime,
+        closeTime: h.isClosed ? null : h.closeTime,
+        isClosed: h.isClosed
+      }));
 
     if (this.photos().length > 0) {
       payload.photos = this.photos();
