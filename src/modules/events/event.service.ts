@@ -10,7 +10,11 @@ const toTime = (value: string) => {
   if (!trimmed) return null;
   // Support both HH:mm:ss and HH:mm
   const parts = trimmed.split(":");
-  const timePart = parts.length === 2 ? `${trimmed}:00` : trimmed;
+  let timePart = parts.length === 2 ? `${trimmed}:00` : trimmed;
+  // Fix single digit hour from some mobile inputs
+  if (timePart.indexOf(':') === 1) {
+    timePart = '0' + timePart;
+  }
   const date = new Date(`1970-01-01T${timePart}Z`);
   if (isNaN(date.getTime())) {
     throw new Error(`Formato de hora invalido: ${value}. Use HH:mm o HH:mm:ss`);

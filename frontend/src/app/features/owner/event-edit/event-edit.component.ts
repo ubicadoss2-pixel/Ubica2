@@ -187,7 +187,42 @@ export class EventEditComponent implements OnInit {
     const reader = new FileReader();
     reader.onload = (e) => {
       const base64Url = e.target?.result as string;
-      this.addPhoto(base64Url);
+      
+      const img = new Image();
+      img.onload = () => {
+        const canvas = document.createElement('canvas');
+        const MAX_WIDTH = 1200;
+        const MAX_HEIGHT = 1200;
+        let width = img.width;
+        let height = img.height;
+
+        if (width > height) {
+          if (width > MAX_WIDTH) {
+            height *= MAX_WIDTH / width;
+            width = MAX_WIDTH;
+          }
+        } else {
+          if (height > MAX_HEIGHT) {
+            width *= MAX_HEIGHT / height;
+            height = MAX_HEIGHT;
+          }
+        }
+
+        canvas.width = width;
+        canvas.height = height;
+        const ctx = canvas.getContext('2d');
+        if (ctx) {
+          ctx.drawImage(img, 0, 0, width, height);
+          const resizedBase64 = canvas.toDataURL('image/jpeg', 0.8);
+          this.addPhoto(resizedBase64);
+        } else {
+          this.addPhoto(base64Url);
+        }
+      };
+      img.onerror = () => {
+        this.addPhoto(base64Url);
+      };
+      img.src = base64Url;
     };
     reader.onerror = () => {
       this.error.set('No se pudo leer la imagen');
