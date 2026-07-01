@@ -189,7 +189,7 @@ export class AgendaComponent implements OnInit {
     
 
     this.eventsService.listAgenda(this.form.getRawValue())
-    .pipe(timeout(2000))
+    .pipe(timeout(15000))
     .subscribe({
       next: (response) => {
         // Filtrar duplicados por título
