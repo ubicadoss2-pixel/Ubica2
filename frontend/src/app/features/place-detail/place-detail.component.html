@@ -1,0 +1,231 @@
+<section *ngIf="place() as place; else loadingTpl" class="detail">
+  <!-- 1. HEADER CARD -->
+  <article class="cover card">
+    <div class="header-info">
+      <p class="tag">{{ place.placeType?.name || 'Lugar' }}</p>
+      <h1>{{ place.name }}</h1>
+      <div class="rating-badge" *ngIf="avgRating()" style="display: inline-flex; align-items: center; gap: 0.35rem;">
+        <svg class="lucide lucide-star" xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="currentColor" stroke="currentColor" stroke-width="2"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
+        <span>{{ avgRating() | number:'1.1-1' }}</span>
+      </div>
+      <p class="description">{{ place.description || ('Sin descripción registrada.' | translate) }}</p>
+      
+      <div class="weather-widget" *ngIf="weather() as w">
+        <span class="w-icon">{{ w.icon }}</span>
+        <span class="w-temp">{{ w.temp }}°C</span>
+        <span class="w-cond">{{ w.condition }} {{ 'en Armenia' | translate }}</span>
+      </div>
+    </div>
+
+    <div class="actions" style="display: flex; gap: 0.5rem; flex-wrap: wrap;">
+      <button class="btn-light" type="button" (click)="viewPlaceOnMap()" style="flex: 1; font-weight: bold; display: inline-flex; align-items: center; justify-content: center; gap: 0.35rem;">
+        <svg class="lucide lucide-map" xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="3 6 9 3 15 6 21 3 21 18 15 21 9 18 3 21"/><line x1="9" x2="9" y1="3" y2="18"/><line x1="15" x2="15" y1="6" y2="21"/></svg>
+        {{ 'Ver en mapa' | translate }}
+      </button>
+    </div>
+  </article>
+
+
+
+  <!-- 2. INFO GRID -->
+  <section class="columns">
+    <article class="card panel">
+      <h2>{{ 'Contactos y Redes' | translate }}</h2>
+      <ul class="contact-list">
+        <li *ngFor="let contact of place.contacts">
+          <strong>{{ contact.contactType }}:</strong>
+          <ng-container [ngSwitch]="contact.contactType">
+            <a *ngSwitchCase="'WHATSAPP'" [href]="getWhatsAppLink(contact.value)" target="_blank" (click)="trackContactClick()">{{ contact.value }}</a>
+            <a *ngSwitchCase="'PHONE'" [href]="'tel:' + contact.value" (click)="trackContactClick()">{{ contact.value }}</a>
+            <a *ngSwitchCase="'EMAIL'" [href]="'mailto:' + contact.value" (click)="trackContactClick()">{{ contact.value }}</a>
+            <a *ngSwitchDefault [href]="contact.value" target="_blank" (click)="trackContactClick()">{{ contact.value }}</a>
+          </ng-container>
+        </li>
+        <li *ngFor="let social of place.socialLinks">
+          <strong>{{ social.platform }}:</strong>
+          <a [href]="social.url" target="_blank" rel="noreferrer">{{ getSocialHandle(social) }}</a>
+        </li>
+      </ul>
+    </article>
+
+    <article class="card panel">
+      <h2>{{ 'Horarios de Atención' | translate }}</h2>
+      <ul class="hours-list" style="display: grid; grid-template-columns: 1fr; gap: 0.8rem; padding: 0; list-style: none;">
+        <li *ngFor="let hour of place.openingHours" style="display: flex; justify-content: space-between; padding: 0.8rem 1rem; background: var(--surface-soft); border-radius: 8px; align-items: center; border: 1px solid var(--border-quiet);">
+          <strong style="color: var(--ink-primary); font-weight: 600;">{{ getWeekdayName(hour.weekday) }}</strong>
+          <span *ngIf="!hour.isClosed" style="font-family: monospace; font-size: 1.05rem; color: var(--text-secondary);">
+            {{ (hour.openTime | date:'HH:mm':'UTC') || '--' }} - {{ (hour.closeTime | date:'HH:mm':'UTC') || '--' }}
+          </span>
+          <span *ngIf="hour.isClosed" class="closed-tag" style="background: var(--error-bg); color: var(--error-text); padding: 0.3rem 0.8rem; border-radius: 12px; font-size: 0.85rem; font-weight: bold;">{{ 'Cerrado' | translate }}</span>
+        </li>
+      </ul>
+    </article>
+  </section>
+
+  <!-- 3. EVENTS -->
+  <section class="card events" *ngIf="events().length > 0">
+    <h2>{{ 'Eventos del Lugar' | translate }}</h2>
+    <div class="event-list">
+      <app-event-card 
+        *ngFor="let event of events()" 
+        [event]="event"
+        [isAuthenticated]="auth.isAuthenticated()"
+        (routeTo)="routeToEvent($event)"
+        (viewOnMap)="viewOnMap($event)">
+      </app-event-card>
+    </div>
+  </section>
+
+  <!-- 3.5 PROMOTIONS -->
+  <section class="card promotions" *ngIf="place.promotions && place.promotions.length > 0">
+    <h2>
+      <svg class="lucide lucide-zap" xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align: middle; margin-right: 0.4rem; color: var(--neon-purple);"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>
+      {{ 'Promociones Especiales' | translate }}
+    </h2>
+    <div class="promo-list">
+      <article class="promo-item card" *ngFor="let promo of place.promotions">
+        <div class="promo-header-row">
+          <span class="discount-pill" [class]="'type-' + promo.discountType.toLowerCase()">
+            <span *ngIf="promo.discountType === 'PERCENTAGE'">{{ promo.discountValue }}% OFF</span>
+            <span *ngIf="promo.discountType === 'FIXED'">{{ promo.discountValue | currency:'COP':'symbol':'1.0-0' }} OFF</span>
+            <span *ngIf="promo.discountType === 'BOGO'">2×1</span>
+          </span>
+          <span class="status-badge" [class]="getPromoStatus(promo.startDate, promo.endDate).toLowerCase()">
+            {{ getPromoStatus(promo.startDate, promo.endDate) === 'ACTIVA' ? ('Activa' | translate) : 
+               getPromoStatus(promo.startDate, promo.endDate) === 'PROXIMA' ? ('Próxima' | translate) : ('Finalizada' | translate) }}
+          </span>
+        </div>
+        <div class="promo-body">
+          <h3>{{ promo.title }}</h3>
+          <p class="promo-desc">{{ promo.description }}</p>
+          <div class="promo-dates">
+            <svg class="lucide lucide-clock" xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align: middle; margin-right: 0.25rem;"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+            {{ 'Vigencia:' | translate }} {{ promo.startDate | date:'dd/MM/yyyy' }} al {{ promo.endDate | date:'dd/MM/yyyy' }}
+          </div>
+          <div class="promo-code-box" *ngIf="promo.code">
+            <span class="code-label">{{ 'CÓDIGO:' | translate }}</span>
+            <code class="code-value">{{ promo.code }}</code>
+            <button class="btn-copy" type="button" (click)="copyToClipboard(promo.code, promo.id)">
+              {{ copiedPromoId() === promo.id ? ('¡Copiado!' | translate) : ('Copiar' | translate) }}
+            </button>
+          </div>
+        </div>
+      </article>
+    </div>
+  </section>
+
+  <!-- 4. REVIEWS SECTION -->
+  <section class="card reviews" id="reviews">
+    <h2>{{ 'Calificaciones' | translate }}</h2>
+    
+    <div class="alert-success" *ngIf="info()" style="background: rgba(46,213,115,0.1); color: var(--success); padding: 1rem; border-radius: 8px; margin-bottom: 1rem; border: 1px solid var(--success); font-weight: 500;">
+      <svg class="lucide lucide-check-circle" xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align: middle; margin-right: 0.35rem;"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+      {{ info() }}
+    </div>
+
+    <div class="comment-hub" *ngIf="auth.isAuthenticated(); else loginBox">
+      <form [formGroup]="commentForm" (ngSubmit)="submitComment()" class="comment-form">
+        <div class="rating-input-interactive">
+          <label style="font-size: var(--font-size-small); font-weight: 800; color: var(--ink-primary); text-transform: uppercase; letter-spacing: 0.05em;">{{ 'Tu calificación:' | translate }}</label>
+          <div class="stars-container" style="display: flex; gap: 0.35rem; align-items: center;">
+            <button
+              *ngFor="let star of stars"
+              type="button"
+              class="star-btn"
+              [class.active]="(hoverRating() || currentRating) >= star"
+              [class.hovered]="hoverRating() >= star"
+              (mouseenter)="hoverRating.set(star)"
+              (mouseleave)="hoverRating.set(0)"
+              (click)="setRating(star)"
+              [attr.aria-label]="star + ' de 5 estrellas'"
+            >
+              <svg class="lucide lucide-star" xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24" [attr.fill]="(hoverRating() || currentRating) >= star ? 'currentColor' : 'none'" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
+            </button>
+          </div>
+          <p class="rating-hint" *ngIf="currentRating > 0" style="font-size: 0.78rem; color: var(--neon-purple); font-weight: 700; margin: 0.35rem 0 0;">
+            {{ currentRating }} {{ currentRating === 1 ? 'estrella' : 'estrellas' }} seleccionada{{ currentRating === 1 ? '' : 's' }}
+          </p>
+        </div>
+        <div class="comment-input-container" style="display: flex; flex-direction: column; gap: 0.5rem; width: 100%;">
+          <label for="reviewContent" style="font-weight: 800; text-transform: uppercase; font-size: var(--font-size-small); color: var(--ink-primary);">{{ 'Escribe tu reseña:' | translate }}</label>
+          <textarea id="reviewContent" formControlName="content" rows="4" placeholder="{{ 'Comparte tu experiencia en este lugar...' | translate }}" style="width: 100%; padding: 1rem; border-radius: 12px; border: 1px solid var(--border-quiet); background: var(--surface-soft); color: var(--ink-primary); font-size: var(--font-size-medium); font-family: inherit; resize: vertical;"></textarea>
+        </div>
+        <button class="btn-main" type="submit" [disabled]="commentForm.invalid || commentLoading()" style="font-size: var(--font-size-medium);">
+          <span *ngIf="!commentLoading()">{{ 'Calificar' | translate }}</span>
+          <span *ngIf="commentLoading()">{{ 'Enviando...' | translate }}</span>
+        </button>
+      </form>
+    </div>
+    
+    <ng-template #loginBox>
+      <div class="login-prompt">
+        <p>{{ 'Inicia sesión para dejar una reseña.' | translate }}</p>
+        <button class="btn-light" routerLink="/login">{{ 'Ingresar' | translate }}</button>
+      </div>
+    </ng-template>
+
+
+    <div class="reviews-list-header" *ngIf="comments().length > 0" style="display: flex; justify-content: flex-end; align-items: center; margin-bottom: 2rem;">
+      <div class="filter-chips" style="display: flex; gap: 0.8rem; overflow-x: auto; padding-bottom: 0.5rem;">
+        <button class="chip" [class.active]="sortOrder() === 'recent'" (click)="sortOrder.set('recent')">Más recientes</button>
+        <button class="chip" [class.active]="sortOrder() === 'rating'" (click)="sortOrder.set('rating')">Mejor calificadas</button>
+        <button class="chip" [class.active]="sortOrder() === 'useful'" (click)="sortOrder.set('useful')">Más útiles</button>
+      </div>
+    </div>
+
+    <div class="reviews-list" *ngIf="sortedComments().length > 0; else emptyReviews" style="display: grid; gap: 1rem;">
+      <div class="review-item card" *ngFor="let comm of sortedComments()" style="padding: 1.5rem; border-radius: 12px; box-shadow: 0 4px 12px rgba(0,0,0,0.05); border: 1px solid var(--border-quiet); background: var(--surface-card);">
+        <div class="review-header" style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 1rem;">
+          <div style="display: flex; flex-direction: column;">
+            <span class="user-name" style="font-weight: bold; color: var(--ink-primary); font-size: 1.1rem;">{{ comm.user?.fullName || ('Usuario Anónimo' | translate) }}</span>
+            <span class="review-date" style="font-size: 0.85rem; color: var(--text-secondary);">{{ comm.createdAt | date:'longDate' }}</span>
+          </div>
+          <span class="review-rating" *ngIf="comm.rating" style="background: rgba(124, 58, 237, 0.1); color: var(--neon-purple); padding: 0.3rem 0.8rem; border-radius: 20px; font-weight: bold; display: inline-flex; align-items: center; gap: 0.3rem;">
+            <svg class="lucide lucide-star" xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="currentColor" stroke="currentColor" stroke-width="2"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
+            <span>{{ comm.rating }}</span>
+          </span>
+        </div>
+        <p class="review-content" *ngIf="comm.content && comm.content !== 'Solo calificación'" style="color: var(--text-secondary); line-height: 1.6; margin-bottom: 1.2rem;">{{ comm.content }}</p>
+        
+        <div class="review-actions" style="display: flex; align-items: center; gap: 1rem; border-top: 1px solid var(--border-quiet); padding-top: 0.8rem;">
+          <button class="btn-like notranslate" translate="no" (click)="likeComment(comm.id)" style="background: none; border: none; cursor: pointer; color: var(--ink-muted); font-size: 0.9rem; display: flex; align-items: center; gap: 0.4rem; padding: 0.4rem 0.8rem; border-radius: 20px; font-weight: 600; transition: all 0.2s; background-color: var(--surface-soft);">
+            <svg class="lucide lucide-thumbs-up" xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" [attr.fill]="comm.likedByMe ? 'currentColor' : 'none'" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" [style.color]="comm.likedByMe ? 'var(--neon-purple)' : 'inherit'"><path d="M7 10v12"/><path d="M15 5.88 14 10h5.83a2 2 0 0 1 1.92 2.56l-2.33 8A2 2 0 0 1 17.5 22H4a2 2 0 0 1-2-2v-8a2 2 0 0 1 2-2h2.76a2 2 0 0 0 1.79-1.11L12 2h0a3.13 3.13 0 0 1 3 3.88Z"/></svg>
+            <span class="notranslate" translate="no" [style.color]="comm.likedByMe ? 'var(--neon-purple)' : 'inherit'">{{ comm.likes || 0 }} ¿Te resultó útil?</span>
+          </button>
+        </div>
+      </div>
+      
+      </div>
+
+    <ng-template #emptyReviews>
+      <div class="empty-reviews-state">
+        <p>{{ 'Aún no hay reseñas. ¡Sé el primero en compartir tu experiencia!' | translate }}</p>
+      </div>
+    </ng-template>
+  </section>
+
+  <!-- 5. REPORTING -->
+  <section class="card report">
+    <h2>{{ 'Reportar un problema' | translate }}</h2>
+    <form [formGroup]="reportForm" (ngSubmit)="reportPlace()">
+      <select formControlName="reason">
+        <option value="WRONG_INFO">{{ 'Información incorrecta' | translate }}</option>
+        <option value="SPAM">{{ 'Spam' | translate }}</option>
+        <option value="INAPPROPRIATE">{{ 'Contenido inapropiado' | translate }}</option>
+        <option value="CLOSED">{{ 'Lugar cerrado' | translate }}</option>
+        <option value="OTHER">{{ 'Otro' | translate }}</option>
+      </select>
+      <textarea rows="2" formControlName="details" [placeholder]="'Dinos qué está mal...' | translate"></textarea>
+      <button class="btn-main" type="submit">{{ 'Enviar reporte' | translate }}</button>
+    </form>
+  </section>
+</section>
+
+<p class="error" *ngIf="error()">{{ error() }}</p>
+
+<ng-template #loadingTpl>
+  <div class="loading-full">
+    <div class="loader-pulse"></div>
+    <p>{{ 'Cargando radar de lugar...' | translate }}</p>
+  </div>
+</ng-template>

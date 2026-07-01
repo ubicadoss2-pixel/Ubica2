@@ -1,0 +1,35 @@
+<div class="page-header-banner">
+  <div class="header-content">
+    <h1>Tus lugares favoritos, siempre a un clic</h1>
+    <p class="subtitle">Guarda los lugares y eventos que más te interesen para encontrarlos fácilmente cuando los necesites.</p>
+  </div>
+</div>
+
+<section class="favorites-page">
+  <p class="error" *ngIf="error()">{{ error() }}</p>
+
+  <section class="grid" *ngIf="items().length; else emptyTpl">
+    <app-place-card 
+      *ngFor="let favorite of items()" 
+      [place]="favorite.place" 
+      [isFavorite]="true"
+      [isAuthenticated]="authStore.isAuthenticated()"
+      (toggleFavorite)="toggleFavorite($event)"
+      (routeTo)="routeTo($event)">
+    </app-place-card>
+  </section>
+
+  <ng-template #emptyTpl>
+    <div class="empty-state">
+      <div class="empty-icon-wrapper">
+        <div class="floating-heart">
+          <svg class="lucide lucide-heart" xmlns="http://www.w3.org/2000/svg" width="40" height="40" viewBox="0 0 24 24" fill="currentColor" stroke="none"><path d="M19 14c1.49-1.46 3-3.21 3-5.5A5.5 5.5 0 0 0 16.5 3c-1.76 0-3 .5-4.5 2-1.5-1.5-2.74-2-4.5-2A5.5 5.5 0 0 0 2 8.5c0 2.3 1.5 4.05 3 5.5l7 7Z"/></svg>
+        </div>
+        <div class="glow-ring"></div>
+      </div>
+      <h3>No has agregado favoritos</h3>
+      <p>Los lugares que guardes aparecerán aquí.</p>
+      <a routerLink="/" class="btn-primary btn-explore">Descubrir</a>
+    </div>
+  </ng-template>
+</section>

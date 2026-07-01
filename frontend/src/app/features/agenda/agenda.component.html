@@ -1,0 +1,141 @@
+<div class="agenda-page">
+  <!-- 1. PREMIUM EVENT BANNER -->
+  <section class="events-hero">
+    <div class="hero-overlay"></div>
+    <div class="hero-content">
+      <div class="hero-badge">{{ 'Lo que pasa hoy' | translate }}</div>
+      <h1>{{ 'Agenda de Eventos' | translate }}</h1>
+
+      <div class="hero-actions">
+        <button class="btn-primary" (click)="scrollToGrid()">
+          {{ 'Ver Calendario' | translate }}
+        </button>
+      </div>
+    </div>
+  </section>
+
+  <!-- 2. CENTRAL FILTER HUB -->
+  <div class="central-filter-hub">
+    <div class="hub-title">
+      <h2>
+        <svg class="lucide lucide-search" xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align: middle; margin-right: 0.4rem; color: var(--neon-purple);"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
+        Busca tu próximo plan
+      </h2>
+      <p>Filtra por ciudad, tipo de evento o fecha específica</p>
+    </div>
+    <section class="filters-panel">
+      <form [formGroup]="form" (ngSubmit)="onFilter()" class="filters-form">
+        <div class="field">
+          <label>{{ 'Ciudad' | translate }}</label>
+          <select formControlName="cityId">
+            <option value="">{{ 'Todas las ciudades' | translate }}</option>
+            <option *ngFor="let city of cities()" [value]="city.id">{{ city.name }}</option>
+          </select>
+        </div>
+        
+        <div class="field">
+          <label>{{ 'Tipo de Evento' | translate }}</label>
+          <select formControlName="categoryId">
+            <option value="">{{ 'Todas las categorías' | translate }}</option>
+            <option *ngFor="let cat of categories()" [value]="cat.id">{{ cat.name }}</option>
+          </select>
+        </div>
+
+        <div class="field">
+          <label>{{ 'Cuándo' | translate }}</label>
+          <select formControlName="weekday">
+            <option value="">{{ 'Cualquier día' | translate }}</option>
+            <option value="0">{{ 'Domingo' | translate }}</option>
+            <option value="1">{{ 'Lunes' | translate }}</option>
+            <option value="2">{{ 'Martes' | translate }}</option>
+            <option value="3">{{ 'Miércoles' | translate }}</option>
+            <option value="4">{{ 'Jueves' | translate }}</option>
+            <option value="5">{{ 'Viernes' | translate }}</option>
+            <option value="6">{{ 'Sábado' | translate }}</option>
+          </select>
+        </div>
+
+        <div class="field">
+          <label>{{ 'Fecha específica' | translate }}</label>
+          <input type="date" formControlName="date" />
+        </div>
+        
+        <div class="filter-actions">
+          <button type="submit" class="btn-radar-event">
+            {{ 'Buscar Eventos' | translate }}
+          </button>
+          <button type="button" class="btn-clean" (click)="clearFilters()">
+            {{ 'Limpiar' | translate }}
+          </button>
+        </div>
+      </form>
+    </section>
+  </div>
+
+  <!-- 3. FEATURED TODAY (CAROUSEL) -->
+  <section class="today-highlights" *ngIf="todayEvents().length > 0">
+    <div class="section-header">
+      <div class="live-indicator">
+        <span class="dot"></span> {{ 'EN VIVO HOY' | translate }}
+      </div>
+      <h2>{{ 'Recomendados de Hoy' | translate }}</h2>
+    </div>
+    
+    <div class="carousel-wrapper">
+      <div class="carousel-track" #carouselContainer>
+        <div class="featured-event-card" *ngFor="let event of todayEvents()" [routerLink]="['/places', event.placeId]">
+          <div class="event-img" [style.backgroundImage]="'url(' + (event.photos?.[0]?.url || 'https://images.unsplash.com/photo-1514525253161-7a46d19cd819?auto=format&fit=crop&w=600&q=60') + ')'">
+            <div class="card-gradient"></div>
+            <span class="category-tag">{{ event.category?.name }}</span>
+          </div>
+          <div class="event-info">
+            <div class="card-title-row">
+              <h3>{{ event.title }}</h3>
+              <span class="sponsored-badge" *ngIf="event.isSponsored">Destacado</span>
+            </div>
+            <div class="info-row">
+              <span class="loc">
+                <svg class="lucide lucide-map-pin" xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align: middle; margin-right: 0.2rem;"><path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z"/><circle cx="12" cy="10" r="3"/></svg>
+                {{ event.place?.name }}
+              </span>
+              <span class="time" *ngIf="event.startTime">
+                <svg class="lucide lucide-clock" xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align: middle; margin-right: 0.2rem;"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+                {{ formatEventTime(event.startTime) }}
+              </span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 4. MAIN EVENT LIST -->
+  <section class="events-main-section" id="events-grid">
+    <div class="section-header">
+      <h2>{{ 'Próximos Eventos' | translate }}</h2>
+      <p *ngIf="events().length > 0">Descubre experiencias locales memorables.</p>
+    </div>
+
+    <!-- Loading State with Skeletons -->
+    <div class="events-grid" *ngIf="loading()">
+      <app-skeleton *ngFor="let item of [1,2,3,4,5,6]" type="card" height="300px"></app-skeleton>
+    </div>
+
+    <div class="empty-state" *ngIf="!loading() && events().length === 0">
+      <div class="empty-icon">
+        <svg class="lucide lucide-calendar-days" xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect width="18" height="18" x="3" y="4" rx="2" ry="2"/><line x1="16" x2="16" y1="2" y2="6"/><line x1="8" x2="8" y1="2" y2="6"/><line x1="3" x2="21" y1="10" y2="10"/><path d="M8 14h.01"/><path d="M12 14h.01"/><path d="M16 14h.01"/><path d="M8 18h.01"/><path d="M12 18h.01"/><path d="M16 18h.01"/></svg>
+      </div>
+      <h3>{{ 'No hay señales' | translate }}</h3>
+      <p>{{ 'Intenta cambiar los filtros para encontrar otros eventos.' | translate }}</p>
+    </div>
+    <div class="events-grid" *ngIf="!loading() && events().length > 0">
+      <app-event-card 
+        *ngFor="let event of events()" 
+        [event]="event"
+        [isAuthenticated]="authStore.isAuthenticated()"
+        (routeTo)="generateRoute($event)"
+        (viewOnMap)="viewOnMap($event)">
+      </app-event-card>
+    </div>
+  </section>
+</div>

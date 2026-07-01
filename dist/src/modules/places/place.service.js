@@ -1,0 +1,306 @@
+"use strict";
+var __importDefault = (this && this.__importDefault) || function (mod) {
+    return (mod && mod.__esModule) ? mod : { "default": mod };
+};
+Object.defineProperty(exports, "__esModule", { value: true });
+exports.setPlaceStatus = exports.listPlaces = exports.getPlaceById = exports.updatePlace = exports.createPlace = void 0;
+const prisma_1 = require("../../config/prisma");
+const slug_1 = require("../../shared/utils/slug");
+const pagination_1 = require("../../shared/utils/pagination");
+const time_1 = require("../../shared/utils/time");
+const geocoding_1 = require("../../shared/utils/geocoding");
+const comment_service_1 = require("../comments/comment.service");
+const cloudinary_1 = __importDefault(require("../../config/cloudinary"));
+const uploadBase64Image = async (base64Str) => {
+    if (base64Str && base64Str.startsWith("data:image/")) {
+        const uploadRes = await cloudinary_1.default.uploader.upload(base64Str, { folder: "places" });
+        return uploadRes.secure_url;
+    }
+    return base64Str;
+};
+const toTime = (value) => {
+    const trimmed = value.trim();
+    if (!trimmed)
+        return null;
+    const parts = trimmed.split(":");
+    const timePart = parts.length === 2 ? `${trimmed}:00` : trimmed;
+    const date = new Date(`1970-01-01T${timePart}Z`);
+    if (isNaN(date.getTime())) {
+        throw new Error(`Formato de hora invalido: ${value}. Use HH:mm o HH:mm:ss`);
+    }
+    return date;
+};
+const buildUniqueSlug = async (cityId, name) => {
+    const base = (0, slug_1.slugify)(name);
+    let slug = base;
+    let counter = 1;
+    while (true) {
+        const exists = await prisma_1.prisma.place.findFirst({
+            where: { cityId, slug },
+            select: { id: true },
+        });
+        if (!exists)
+            return slug;
+        counter += 1;
+        slug = `${base}-${counter}`;
+    }
+};
+const createPlace = async (data, ownerUserId, isAdmin) => {
+    const slug = await buildUniqueSlug(data.cityId, data.name);
+    let latitude = data.latitude;
+    let longitude = data.longitude;
+    if (latitude === undefined || longitude === undefined) {
+        let queryFallback = data.addressLine;
+        if (!queryFallback || queryFallback.trim() === "") {
+            const city = await prisma_1.prisma.city.findUnique({ where: { id: data.cityId } });
+            if (city)
+                queryFallback = city.name;
+        }
+        const cityObj = await prisma_1.prisma.city.findUnique({ where: { id: data.cityId } });
+        const geo = await (0, geocoding_1.geocodeAddress)(queryFallback, data.postalCode, cityObj?.name);
+        latitude = geo.latitude !== null ? geo.latitude : undefined;
+        longitude = geo.longitude !== null ? geo.longitude : undefined;
+    }
+    let uploadedPhotos = [];
+    if (data.photos && data.photos.length > 0) {
+        uploadedPhotos = await Promise.all(data.photos.map(async (url, index) => {
+            const secureUrl = await uploadBase64Image(url);
+            return { url: secureUrl, sortOrder: index };
+        }));
+    }
+    return prisma_1.prisma.place.create({
+        data: {
+            ownerUserId,
+            cityId: data.cityId,
+            placeTypeId: data.placeTypeId,
+            name: data.name,
+            slug,
+            description: data.description,
+            addressLine: data.addressLine,
+            neighborhood: data.neighborhood,
+            postalCode: data.postalCode,
+            latitude,
+            longitude,
+            priceLevel: data.priceLevel,
+            status: data.status || "DRAFT",
+            contacts: data.contacts ? { create: data.contacts } : undefined,
+            socialLinks: data.socialLinks ? { create: data.socialLinks } : undefined,
+            openingHours: data.openingHours
+                ? {
+                    create: data.openingHours.map((h) => ({
+                        weekday: h.weekday,
+                        openTime: h.openTime ? toTime(h.openTime) : null,
+                        closeTime: h.closeTime ? toTime(h.closeTime) : null,
+                        isClosed: h.isClosed ?? false,
+                    })),
+                }
+                : undefined,
+            photos: uploadedPhotos.length > 0
+                ? {
+                    create: uploadedPhotos,
+                }
+                : undefined,
+        },
+    });
+};
+exports.createPlace = createPlace;
+const updatePlace = async (placeId, data, userId, isAdmin) => {
+    const place = await prisma_1.prisma.place.findUnique({ where: { id: placeId } });
+    if (!place)
+        throw new Error("Lugar no existe");
+    if (!isAdmin && place.ownerUserId !== userId) {
+        throw new Error("No autorizado");
+    }
+    const updates = { ...data };
+    if (data.name && data.name !== place.name) {
+        updates.slug = await buildUniqueSlug(place.cityId, data.name);
+    }
+    if ((data.addressLine !== undefined || data.postalCode !== undefined) && data.latitude === undefined && data.longitude === undefined) {
+        let queryFallback = data.addressLine !== undefined ? data.addressLine : place.addressLine;
+        if (!queryFallback || queryFallback.trim() === "") {
+            const city = await prisma_1.prisma.city.findUnique({ where: { id: place.cityId } });
+            if (city)
+                queryFallback = city.name;
+        }
+        const cityObj = await prisma_1.prisma.city.findUnique({ where: { id: place.cityId } });
+        const geo = await (0, geocoding_1.geocodeAddress)(queryFallback, data.postalCode !== undefined ? data.postalCode : place.postalCode, cityObj?.name);
+        if (geo.latitude !== null && geo.longitude !== null) {
+            updates.latitude = geo.latitude;
+            updates.longitude = geo.longitude;
+        }
+    }
+    let uploadedPhotos = [];
+    if (data.photos && data.photos.length > 0) {
+        uploadedPhotos = await Promise.all(data.photos.map(async (url, index) => {
+            const secureUrl = await uploadBase64Image(url);
+            return { url: secureUrl, sortOrder: index };
+        }));
+    }
+    if (data.photos) {
+        updates.photos = {
+            deleteMany: {},
+            create: uploadedPhotos,
+        };
+    }
+    if (data.contacts) {
+        updates.contacts = {
+            deleteMany: {},
+            create: data.contacts,
+        };
+    }
+    if (data.socialLinks) {
+        updates.socialLinks = {
+            deleteMany: {},
+            create: data.socialLinks,
+        };
+    }
+    if (data.openingHours) {
+        updates.openingHours = {
+            deleteMany: {},
+            create: data.openingHours.map((h) => ({
+                weekday: h.weekday,
+                openTime: h.openTime ? toTime(h.openTime) : null,
+                closeTime: h.closeTime ? toTime(h.closeTime) : null,
+                isClosed: h.isClosed ?? false,
+            })),
+        };
+    }
+    if (data.contacts) {
+        updates.contacts = {
+            deleteMany: {},
+            create: data.contacts,
+        };
+    }
+    if (data.socialLinks) {
+        updates.socialLinks = {
+            deleteMany: {},
+            create: data.socialLinks,
+        };
+    }
+    if (data.openingHours) {
+        updates.openingHours = {
+            deleteMany: {},
+            create: data.openingHours.map((h) => ({
+                weekday: h.weekday,
+                openTime: h.openTime ? toTime(h.openTime) : null,
+                closeTime: h.closeTime ? toTime(h.closeTime) : null,
+                isClosed: h.isClosed ?? false,
+            })),
+        };
+    }
+    // Remove individual fields already mapped to complex prisma objects
+    delete updates.photos_list; // If any
+    return prisma_1.prisma.place.update({
+        where: { id: placeId },
+        data: updates,
+    });
+};
+exports.updatePlace = updatePlace;
+const getPlaceById = async (placeId) => {
+    const place = await prisma_1.prisma.place.findUnique({
+        where: { id: placeId },
+        include: {
+            city: true,
+            placeType: true,
+            contacts: true,
+            socialLinks: true,
+            openingHours: true,
+            photos: true,
+            promotions: {
+                where: { status: "ACTIVE" },
+            },
+        },
+    });
+    if (!place)
+        return null;
+    const stats = await (0, comment_service_1.getEntityRatingStats)("placeId", placeId);
+    return {
+        ...place,
+        averageRating: stats.averageRating,
+        totalRatings: stats.totalRatings,
+    };
+};
+exports.getPlaceById = getPlaceById;
+const listPlaces = async (query, userId, role) => {
+    const page = Number(query.page) || 1;
+    const pageSize = Number(query.pageSize) || 10;
+    const { skip, take } = (0, pagination_1.getPagination)(page, pageSize);
+    const cityId = query.cityId;
+    const placeTypeId = query.placeTypeId;
+    const status = query.status;
+    const search = query.search;
+    const priceLevel = query.priceLevel ? Number(query.priceLevel) : undefined;
+    const ownerId = query.ownerId;
+    const isSponsored = query.isSponsored === 'true';
+    const where = {
+        deletedAt: null,
+    };
+    if (cityId)
+        where.cityId = cityId;
+    if (placeTypeId)
+        where.placeTypeId = placeTypeId;
+    if (priceLevel)
+        where.priceLevel = priceLevel;
+    if (search)
+        where.name = { contains: search }; // Removed mode: 'insensitive' to fix Prisma MySQL/SQLite bug
+    if (ownerId)
+        where.ownerUserId = ownerId;
+    if (isSponsored)
+        where.isSponsored = true;
+    if (!role || (role !== "ADMIN" && role !== "OWNER")) {
+        where.status = "PUBLISHED";
+    }
+    else if (status) {
+        where.status = status;
+    }
+    const [total, items] = await Promise.all([
+        prisma_1.prisma.place.count({ where }),
+        prisma_1.prisma.place.findMany({
+            where,
+            skip,
+            take,
+            orderBy: [
+                { isSponsored: "desc" },
+                { createdAt: "desc" }
+            ],
+            include: {
+                city: true,
+                placeType: true,
+                openingHours: true,
+                photos: true,
+            },
+        }),
+    ]);
+    let results = items;
+    if (query.openNow === "true") {
+        results = results.filter((place) => {
+            const timezone = place.city?.timezone;
+            if (!timezone)
+                return false;
+            return place.openingHours.some((h) => (0, time_1.isOpenNow)(h.weekday, h.openTime, h.closeTime, h.isClosed, timezone));
+        });
+    }
+    // Calculate averageRating and totalRatings for each item dynamically!
+    const resultsWithRatings = await Promise.all(results.map(async (item) => {
+        const stats = await (0, comment_service_1.getEntityRatingStats)("placeId", item.id);
+        return {
+            ...item,
+            averageRating: stats.averageRating ?? null,
+            totalRatings: stats.totalRatings ?? 0,
+        };
+    }));
+    return {
+        page,
+        pageSize,
+        total,
+        items: resultsWithRatings,
+    };
+};
+exports.listPlaces = listPlaces;
+const setPlaceStatus = async (placeId, status) => {
+    return prisma_1.prisma.place.update({
+        where: { id: placeId },
+        data: { status },
+    });
+};
+exports.setPlaceStatus = setPlaceStatus;

@@ -1,0 +1,14 @@
+"use strict";
+Object.defineProperty(exports, "__esModule", { value: true });
+const express_1 = require("express");
+const promotions_controller_1 = require("./promotions.controller");
+const auth_middleware_1 = require("../../shared/middlewares/auth.middleware");
+const router = (0, express_1.Router)();
+router.get("/", promotions_controller_1.listActive);
+router.get("/code/:code", promotions_controller_1.getByCode);
+router.get("/place/:placeId", promotions_controller_1.listByPlace);
+router.post("/", auth_middleware_1.authMiddleware, promotions_controller_1.create);
+router.patch("/:id", auth_middleware_1.authMiddleware, promotions_controller_1.update);
+router.delete("/:id", auth_middleware_1.authMiddleware, promotions_controller_1.remove);
+router.post("/redeem", auth_middleware_1.authMiddleware, promotions_controller_1.redeem);
+exports.default = router;

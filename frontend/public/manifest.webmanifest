@@ -1,0 +1,21 @@
+{
+  "name": "Ubica2 - Explora Armenia",
+  "short_name": "Ubica2",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#0f172a",
+  "theme_color": "#9d00ff",
+  "description": "Tu brújula para los mejores lugares y eventos en Armenia, Quindío.",
+  "orientation": "portrait",
+  "scope": "/",
+  "lang": "es",
+  "icons": [
+    {
+      "src": "assets/logo_final.png",
+      "sizes": "192x192 512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ],
+  "categories": ["travel", "lifestyle", "entertainment"]
+}

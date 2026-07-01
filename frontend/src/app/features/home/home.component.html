@@ -1,0 +1,178 @@
+<div class="explore-page">
+  <!-- 1. HERO SECTION (TOP) -->
+  <section class="hero-section">
+    <div class="hero-content">
+      <p class="eyebrow">{{ 'Tu Próximo Destino' | translate }}</p>
+      <h1>{{ 'Explora Armenia' | translate }}</h1>
+      <p class="hero-desc">
+      </p>
+
+    </div>
+  </section>
+
+  <!-- 2. SEARCH HUB -->
+  <div class="central-hub">
+    <div class="search-bar">
+      <div class="search-input">
+        <span class="search-icon">
+          <svg class="lucide lucide-search" xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
+        </span>
+        <input type="text" #addressInput [placeholder]="'Busca una calle, barrio o lugar en Armenia...' | translate" />
+      </div>
+      <div class="search-actions">
+        <button class="btn-primary" (click)="searchAddress(addressInput.value)">
+          {{ 'Explorar Radar' | translate }}
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- 3. MAP (VISUAL EXPLORATION) -->
+  <div class="map-wrapper">
+    <div class="map-header">
+      <div class="header-info">
+        <h3>{{ 'Explora Armenia' | translate }}</h3>
+      </div>
+      <div class="map-header-actions">
+        <button class="btn-radar-location" (click)="goToMyLocation(); addressInput.value = ''">
+          <span class="icon">
+            <svg class="lucide lucide-map-pin" xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z"/><circle cx="12" cy="10" r="3"/></svg>
+          </span>
+          {{ 'Mi Ubicación' | translate }}
+        </button>
+        <button class="btn-heatmap-toggle" [class.active]="showHeatmap()" (click)="toggleHeatmap()">
+          <svg class="lucide lucide-flame" xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M8.5 14.5A2.5 2.5 0 0 0 11 12c0-1.38-.5-2-1-3-1.072-2.143-.224-4.054 2-6 .5 2.5 2 4.9 4 6.5 2 1.6 3 3.5 3 5.5a7 7 0 1 1-14 0c0-1.153.433-2.294 1-3a2.5 2.5 0 0 0 2.5 2.5z"/></svg>
+          {{ showHeatmap() ? ('Ocultar Calor' | translate) : ('Ver Zonas Activas' | translate) }}
+        </button>
+        <button *ngIf="isRoutingActive()" class="btn-cancel-route" style="background: var(--neon-pink); color: white; border: none; border-radius: 8px; padding: 0.5rem 1rem; font-weight: 700; cursor: pointer; transition: 0.3s; display: inline-flex; align-items: center; gap: 0.35rem;" (click)="cancelRoute()">
+          <svg class="lucide lucide-x" xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg>
+          {{ 'Cancelar Ruta' | translate }}
+        </button>
+      </div>
+    </div>
+    <div class="map-inner-wrapper" style="position: relative; overflow: hidden; width: 100%; border-radius: 0 0 12px 12px;">
+      <div id="map" class="map-container"></div>
+      
+      <!-- CUSTOM ROUTING PANEL -->
+      <div class="custom-routing-panel" 
+           *ngIf="isRoutingActive() && routeInstructions().length > 0"
+           [class.expanded]="isRoutingPanelExpanded()">
+        
+        <div class="routing-panel-header" (click)="toggleRoutingPanel()">
+          <div class="drag-handle"></div>
+          <h4>{{ 'Indicaciones de Ruta' | translate }}</h4>
+          <div class="routing-summary" *ngIf="routeSummary()">
+            <span class="summary-distance">{{ formatDistance(routeSummary().totalDistance) }}</span>
+            <span class="summary-dot">•</span>
+            <span class="summary-time">{{ formatTime(routeSummary().totalTime) }}</span>
+          </div>
+        </div>
+        
+        <div class="routing-instructions-wrapper">
+          <!-- Vista móvil paginada -->
+          <div class="instruction-single-view">
+            <div class="instruction-item active-instruction">
+              <div class="instruction-icon" [innerHTML]="getInstructionIcon(routeInstructions()[currentInstructionIndex()].type)"></div>
+              <div class="instruction-details">
+                <p class="instruction-text">{{ routeInstructions()[currentInstructionIndex()].text }}</p>
+                <span class="instruction-dist" *ngIf="routeInstructions()[currentInstructionIndex()].distance > 0">
+                  {{ formatDistance(routeInstructions()[currentInstructionIndex()].distance) }}
+                </span>
+              </div>
+            </div>
+            
+            <div class="instruction-controls">
+              <button class="btn-control" (click)="prevInstruction()" [disabled]="currentInstructionIndex() === 0">
+                <svg class="lucide lucide-arrow-left" xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m12 19-7-7 7-7"/><path d="M19 12H5"/></svg>
+                Anterior
+              </button>
+              <span class="step-indicator">Paso {{ currentInstructionIndex() + 1 }} de {{ routeInstructions().length }}</span>
+              <button class="btn-control" (click)="nextInstruction()" [disabled]="currentInstructionIndex() === routeInstructions().length - 1">
+                Siguiente
+                <svg class="lucide lucide-arrow-right" xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg>
+              </button>
+            </div>
+          </div>
+
+          <!-- Vista de lista completa (Escritorio o Panel Expandido) -->
+          <div class="routing-instructions-list">
+            <div class="instruction-item" *ngFor="let step of routeInstructions(); let i = index" 
+                 [class.active]="i === currentInstructionIndex()"
+                 (click)="currentInstructionIndex.set(i)">
+              <div class="instruction-icon" [innerHTML]="getInstructionIcon(step.type)"></div>
+              <div class="instruction-details">
+                <p class="instruction-text">{{ step.text }}</p>
+                <span class="instruction-dist" *ngIf="step.distance > 0">{{ formatDistance(step.distance) }}</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 4. FILTERS PANEL -->
+  <section class="filters-panel" style="margin: 0 auto 3rem; max-width: 1000px; padding: 1.5rem;">
+    <form [formGroup]="form" (ngSubmit)="onFilter()" class="filters-form">
+      <div class="field">
+        <label>{{ 'Nombre' | translate }}</label>
+        <input formControlName="search" [placeholder]="'¿Qué buscas?' | translate" />
+      </div>
+
+      <div class="field">
+        <label>{{ 'Ciudad' | translate }}</label>
+        <select formControlName="cityId">
+          <option value="">{{ 'Todas las ciudades' | translate }}</option>
+          <option *ngFor="let city of cities()" [value]="city.id">{{ city.name }}</option>
+        </select>
+      </div>
+
+      <div class="field">
+        <label>{{ 'Tipo de Plan' | translate }}</label>
+        <select formControlName="placeTypeId">
+          <option value="">{{ 'Todos los planes' | translate }}</option>
+          <option *ngFor="let type of placeTypes()" [value]="type.id">{{ type.name }}</option>
+        </select>
+      </div>
+
+      <button type="submit" class="btn-radar">
+        <span class="pulse-icon"></span> {{ 'Actualizar Radar' | translate }}
+      </button>
+    </form>
+  </section>
+
+  <!-- 5. PLACES GRID -->
+  <section class="places-section">
+    <div class="section-header">
+      <h2>Lugares encontrados</h2>
+      <p *ngIf="places().length > 0">Se encontraron {{ places().length }} lugares.</p>
+    </div>
+
+    <!-- Messages -->
+
+    <!-- Loading State with Skeletons -->
+    <div class="places-grid" *ngIf="loading()">
+      <app-skeleton *ngFor="let item of [1,2,3,4,5,6]" type="card" height="340px"></app-skeleton>
+    </div>
+
+    <!-- Empty State -->
+    <div class="empty-state" *ngIf="!loading() && places().length === 0">
+      <div class="empty-icon">
+        <svg class="lucide lucide-compass" xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polygon points="16.24 7.76 14.12 14.12 7.76 16.24 9.88 9.88 16.24 7.76"/></svg>
+      </div>
+      <h3>{{ 'Sin señales' | translate }}</h3>
+      <p>{{ 'Ajusta tu radar o busca en otra zona para encontrar nuevos lugares.' | translate }}</p>
+    </div>
+
+    <div class="places-grid" *ngIf="!loading() && places().length > 0">
+      <app-place-card 
+        *ngFor="let place of places()" 
+        [place]="place" 
+        [isFavorite]="favoriteIds().has(place.id)"
+        [isAuthenticated]="authStore.isAuthenticated()"
+        (toggleFavorite)="toggleFavorite($event)"
+        (routeTo)="routeTo($event)">
+      </app-place-card>
+    </div>
+  </section>
+</div>

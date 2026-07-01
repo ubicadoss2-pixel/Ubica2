@@ -1,0 +1,57 @@
+<section class="auth-wrapper">
+  <div class="auth-card pastel-theme">
+    <div class="brand" translate="no">
+      <img src="assets/logo_final.svg" alt="UBICA2 Logo" class="auth-logo notranslate" />
+      <h1>Iniciar sesión</h1>
+    </div>
+    <p class="subtitle">Accede para guardar favoritos, reportar y administrar según tu rol en <span translate="no" class="notranslate">UBICA2</span>.</p>
+
+
+
+    <form [formGroup]="form" (ngSubmit)="submit()" class="form-container">
+      <div class="input-group">
+        <label for="email">Correo Electrónico</label>
+        <div class="input-wrapper" [class.has-error]="isFieldInvalid('email')">
+          <input id="email" type="email" formControlName="email" placeholder="correo@dominio.com" />
+        </div>
+        <div class="field-error" *ngIf="isFieldInvalid('email')">
+          <span *ngIf="form.get('email')?.errors?.['required']">Este campo es obligatorio.</span>
+        </div>
+      </div>
+
+      <div class="input-group">
+        <label for="password">Contraseña</label>
+        <div class="input-wrapper" [class.has-error]="isFieldInvalid('password')">
+          <input id="password" type="password" formControlName="password" placeholder="••••••••" />
+        </div>
+        <div class="field-error" *ngIf="isFieldInvalid('password')">
+          <span *ngIf="form.get('password')?.errors?.['required']">La contraseña es obligatoria.</span>
+          <span *ngIf="form.get('password')?.errors?.['minlength']">Mínimo 4 caracteres.</span>
+        </div>
+      </div>
+
+
+
+      <div class="alert error-alert" *ngIf="error()">
+        <span class="icon">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z"/><path d="M12 9v4"/><path d="M12 17h.01"/></svg>
+        </span> {{ error() }}
+      </div>
+
+      <button type="submit" [disabled]="loading() || form.invalid" class="btn-primary">
+        <span class="spinner" *ngIf="loading()"></span>
+        {{ loading() ? 'Verificando...' : 'Entrar' }}
+      </button>
+
+    </form>
+
+    <div class="auth-footer">
+      <p class="hint">
+        <a routerLink="/forgot-password">¿Olvidaste tu contraseña?</a>
+      </p>
+      <p class="hint">
+        ¿Aún no tienes cuenta? <a routerLink="/register">Crear cuenta</a>
+      </p>
+    </div>
+  </div>
+</section>

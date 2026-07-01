@@ -1,0 +1,30 @@
+{
+  "version": 1,
+  "skills": {
+    "backend-architect": {
+      "source": "sickn33/antigravity-awesome-skills",
+      "sourceType": "github",
+      "computedHash": "57b223fbedc969e1c5ea31d1bd77ec9e2ac9ac40efdaa0c313e7a23cf9415524"
+    },
+    "backend-development-feature-development": {
+      "source": "sickn33/antigravity-awesome-skills",
+      "sourceType": "github",
+      "computedHash": "2d096c68830893e29efe06bbb2e728fa8799ed80115f84569da5a08062f23e78"
+    },
+    "backend-security-coder": {
+      "source": "rmyndharis/antigravity-skills",
+      "sourceType": "github",
+      "computedHash": "e03e797d3ce105b32d2c7ee2fc352c3630093c8a5019c3e834a945057ced4988"
+    },
+    "interface-design": {
+      "source": "dammyjay93/interface-design",
+      "sourceType": "github",
+      "computedHash": "4d5fe1dacfebc0c1b3837b061405150ed2e4971c096543afc46c23161c5a4f7a"
+    },
+    "web-interface-architect": {
+      "source": "qodex-ai/ai-agent-skills",
+      "sourceType": "github",
+      "computedHash": "209f5c4a849b4d26a99d5774e4a353a4264fbcca473479ff5e92657950d5b24d"
+    }
+  }
+}

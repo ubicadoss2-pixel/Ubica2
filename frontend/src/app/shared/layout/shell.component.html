@@ -1,0 +1,65 @@
+<div class="shell-bg"></div>
+<header class="topbar-shell" [class.auth-theme]="isAuthPage()" [class.light-mode]="isAuthPage() && !appState.authDarkMode()">
+  <div class="shell-content">
+    <div class="brand-area">
+      <a routerLink="/" class="brand-logo" translate="no">
+        <img src="assets/logo_final.svg" alt="UBICA2 Logo" class="logo-icon notranslate" />
+        <span class="logo-text notranslate">UBICA2</span>
+      </a>
+    </div>
+
+    <button class="hamburger-btn" (click)="toggleMenu()" [class.open]="isMenuOpen()">
+      <span class="bar"></span>
+      <span class="bar"></span>
+      <span class="bar"></span>
+    </button>
+
+    <div class="mobile-drawer-overlay" *ngIf="isMenuOpen()" (click)="closeMenu()"></div>
+
+    <div class="nav-wrapper" [class.mobile-open]="isMenuOpen()">
+      <nav class="nav-capsule">
+        <a routerLink="/" routerLinkActive="active" [routerLinkActiveOptions]="{ exact: true }" (click)="closeMenu()">
+          {{ 'Explorar' | translate }}
+        </a>
+        <a routerLink="/agenda" routerLinkActive="active" (click)="closeMenu()">{{ 'Eventos' | translate }}</a>
+        <a *ngIf="authStore.isAuthenticated()" routerLink="/favorites" routerLinkActive="active" (click)="closeMenu()">{{ 'Favoritos' | translate }}</a>
+        <a routerLink="/promotions" routerLinkActive="active" class="nav-promo" (click)="closeMenu()">{{ 'Ofertas' | translate }}</a>
+        <a *ngIf="authStore.isAuthenticated()" routerLink="/profile" routerLinkActive="active" class="nav-profile" (click)="closeMenu()">{{ 'Mi Perfil' | translate }}</a>
+        <a *ngIf="authStore.isAuthenticated() && !authStore.isOwner()" routerLink="/verificacion" routerLinkActive="active" class="nav-verify" (click)="closeMenu()">Verificación</a>
+        <a *ngIf="authStore.isOwner()" routerLink="/owner/places" routerLinkActive="active" class="nav-owner" (click)="closeMenu()">{{ 'Mis Lugares' | translate }}</a>
+        <a *ngIf="authStore.isOwner()" routerLink="/owner/events" routerLinkActive="active" class="nav-owner" (click)="closeMenu()">{{ 'Mis Eventos' | translate }}</a>
+        <a *ngIf="authStore.isOwner()" routerLink="/owner/reports" routerLinkActive="active" class="nav-owner" (click)="closeMenu()">{{ 'Reportes' | translate }}</a>
+        <a *ngIf="authStore.isAdmin()" routerLink="/admin" routerLinkActive="active" class="nav-admin" (click)="closeMenu()">Admin</a>
+      </nav>
+
+      <div class="user-actions">
+        <div class="action-buttons" *ngIf="!authStore.isAuthenticated()">
+          <a routerLink="/login" class="btn-link" (click)="closeMenu()">{{ 'Ingresar' | translate }}</a>
+          <a routerLink="/register" class="btn-primary-pill" (click)="closeMenu()">{{ 'Empezar' | translate }}</a>
+        </div>
+        
+        <div class="user-menu" *ngIf="authStore.isAuthenticated()">
+          <a routerLink="/settings" class="menu-btn settings-btn" title="Configuración" (click)="closeMenu()">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+              <circle cx="12" cy="12" r="3"></circle>
+              <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path>
+            </svg>
+            <span class="menu-label-mobile">Configuración</span>
+          </a>
+          <button type="button" (click)="logout(); closeMenu()" class="menu-btn logout-btn" id="logoutBtn" title="Cerrar sesión">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+              <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path>
+              <polyline points="16 17 21 12 16 7"></polyline>
+              <line x1="21" y1="12" x2="9" y2="12"></line>
+            </svg>
+            <span class="logout-label">{{ 'Cerrar sesión' | translate }}</span>
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+</header>
+
+<main class="page-container">
+  <router-outlet></router-outlet>
+</main>

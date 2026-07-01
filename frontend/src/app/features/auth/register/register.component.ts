@@ -1,0 +1,82 @@
+import { CommonModule } from '@angular/common';
+import { NotificationService } from '../../../core/services/notification.service';
+import { Component, inject, signal } from '@angular/core';
+import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
+import { Router, RouterLink } from '@angular/router';
+import { AuthApiService } from '../../../core/services/auth-api.service';
+import { AppStateService } from '../../../core/services/app-state.service';
+import { AuthStoreService } from '../../../core/services/auth-store.service';
+
+@Component({
+  selector: 'app-register',
+  standalone: true,
+  imports: [CommonModule, ReactiveFormsModule, RouterLink],
+  templateUrl: './register.component.html',
+  styleUrl: './register.component.scss',
+})
+export class RegisterComponent {
+  private readonly fb = inject(FormBuilder);
+  private readonly authApi = inject(AuthApiService);
+  private readonly router = inject(Router);
+  private readonly appState = inject(AppStateService);
+  private readonly authStore = inject(AuthStoreService);
+
+  readonly loading = signal(false);
+  readonly error = signal<string | null>(null);
+  private readonly notificationService = inject(NotificationService);
+  readonly theme = this.appState.theme;
+
+  toggleTheme(): void {
+    this.appState.toggleTheme();
+  }
+
+  readonly form = this.fb.nonNullable.group({
+    fullName: ['', [Validators.required, Validators.minLength(3)]],
+    email: ['', [Validators.required, Validators.email]],
+    phone: [''],
+    birthDate: [''],
+    role: ['USER', [Validators.required]],
+    password: ['', [Validators.required, Validators.minLength(6)]],
+  });
+
+  submit(): void {
+    if (this.form.invalid) {
+      this.form.markAllAsTouched();
+      this.error.set('Por favor, revisa los campos en rojo');
+      return;
+    }
+
+    this.loading.set(true);
+    this.error.set(null);
+    
+
+    const formValue = this.form.getRawValue();
+    const payload = {
+      fullName: formValue.fullName,
+      username: formValue.email.split('@')[0] + Math.floor(Math.random() * 10000),
+      email: formValue.email,
+      password: formValue.password,
+      phone: formValue.phone?.trim() || undefined,
+      birthDate: formValue.birthDate || undefined,
+      role: formValue.role,
+    };
+
+    this.authApi.register(payload).subscribe({
+      next: () => {
+        this.loading.set(false);
+        // Redirect based on the role in the JWT
+        const user = this.authStore.user();
+        if (user?.role === 'OWNER') {
+          this.router.navigate(['/owner/places']);
+        } else {
+          this.router.navigate(['/']);
+        }
+      },
+      error: (err) => {
+        this.loading.set(false);
+        const msg = err?.error?.message || err?.message || 'No fue posible crear la cuenta. Verifica tu conexión e intenta de nuevo.';
+        this.error.set(msg);
+      },
+    });
+  }
+}
