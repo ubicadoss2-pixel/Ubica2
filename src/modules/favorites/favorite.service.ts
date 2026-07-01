@@ -1,4 +1,5 @@
 import { prisma } from "../../config/prisma";
+import { getEntityRatingStats } from "../comments/comment.service";
 
 export const addFavorite = async (userId: string, placeId: string) => {
   const favorite = await prisma.favorite.upsert({
@@ -27,7 +28,7 @@ export const removeFavorite = async (userId: string, placeId: string) => {
 };
 
 export const listFavorites = async (userId: string) => {
-  return prisma.favorite.findMany({
+  const favorites = await prisma.favorite.findMany({
     where: { userId },
     include: {
       place: {
@@ -36,11 +37,25 @@ export const listFavorites = async (userId: string) => {
             orderBy: { sortOrder: "asc" },
           },
           placeType: true,
+          city: true,
         },
       },
     },
     orderBy: { createdAt: "desc" },
   });
+
+  const favoritesWithRatings = await Promise.all(
+    favorites.map(async (favorite) => {
+      if (favorite.place) {
+        const stats = await getEntityRatingStats("placeId", favorite.place.id);
+        (favorite.place as any).averageRating = stats.averageRating ?? null;
+        (favorite.place as any).totalRatings = stats.totalRatings ?? 0;
+      }
+      return favorite;
+    })
+  );
+
+  return favoritesWithRatings;
 };
 
 export const toggleFavoriteVisited = async (userId: string, placeId: string, isVisited: boolean) => {
