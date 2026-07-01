@@ -540,6 +540,9 @@ export class OffersComponent implements OnInit {
   }
 
   getOfferImage(promo: Offer): string {
+    if (promo.imageUrl) {
+      return promo.imageUrl;
+    }
     const placeName = (promo as any).place?.name || '';
     if (this.promoImages[placeName]) {
       return this.promoImages[placeName];
