@@ -1121,9 +1121,7 @@ export class HomeComponent implements OnInit, AfterViewInit {
       )
       .subscribe({
         next: (response) => {
-          const filteredResponseItems = response.items.filter(p => 
-            p.city?.name?.toLowerCase() === 'armenia'
-          );
+          const filteredResponseItems = response.items;
           
           const mockItems: Place[] = [
             { id: 'm-13', cityId: 'city-1', placeTypeId: 'type-1', name: 'El Chalet', description: 'La mejor rumba crossover con un ambiente espectacular.', city: { name: 'Armenia' } as any, placeType: { name: 'Discoteca' } as any, priceLevel: 3, photos: [{ url: '/assets/elchalet.png' }] as any, latitude: 4.5550 as any, longitude: -75.6600 as any, status: 'PUBLISHED' as any, slug: 'el-chalet', averageRating: 4.8, totalComments: 25 } as any,
