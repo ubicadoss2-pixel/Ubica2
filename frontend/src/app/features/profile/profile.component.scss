@@ -372,39 +372,7 @@
 }
 
 
-.promote-card {
-  background: var(--neon-purple);
-  color: white;
-  border: 1px solid var(--neon-purple);
 
-  .card-header h2, .card-header svg {
-    color: white;
-  }
-  
-  .promote-hint {
-    color: rgba(255, 255, 255, 0.9);
-    margin-bottom: 1rem;
-    font-size: 0.95rem;
-    line-height: 1.5;
-  }
-
-  .btn-promote-link {
-    display: inline-block;
-    padding: 0.6rem 1.25rem;
-    background: white;
-    color: var(--neon-purple);
-    font-weight: bold;
-    border-radius: var(--radius-sm);
-    text-decoration: none;
-    transition: all 0.2s;
-
-    &:hover {
-      background: rgba(255, 255, 255, 0.9);
-      color: var(--neon-purple);
-      transform: translateY(-2px);
-    }
-  }
-}
 
 .drag-drop-zone {
   width: 100%;
@@ -920,18 +888,37 @@
 }
 
 @media (max-width: 640px) {
+  .profile-container {
+    padding: 1rem;
+    gap: 1rem;
+  }
+  
   .profile-header {
     flex-direction: column;
     text-align: center;
-    padding: 2rem 1rem;
+    padding: 1.5rem 1rem;
 
-    .avatar-section {
+    .avatar-section-static {
       margin-bottom: 0.5rem;
     }
 
     .user-info .roles-container {
       justify-content: center;
+      gap: 0.5rem;
     }
+    
+    .user-info h1 {
+      font-size: 1.5rem;
+    }
+  }
+
+  .grid-layout {
+    gap: 1rem;
+  }
+
+  .card {
+    padding: 1.25rem;
+    border-radius: var(--radius-md);
   }
 
   .card .card-header {
@@ -954,6 +941,31 @@
     .place-image {
       width: 100%;
       height: 180px;
+    }
+  }
+  
+  .profile-avatar-wrapper .avatar-action-buttons {
+    flex-direction: column;
+    width: 100%;
+    
+    .btn-avatar-action {
+      width: 100%;
+      justify-content: center;
+    }
+  }
+  
+  .achievements-card .achievement-card {
+    padding: 1rem;
+    flex-direction: column;
+    text-align: center;
+    
+    .ach-icon {
+      margin: 0 auto;
+    }
+    
+    .ach-status {
+      position: static;
+      margin-top: 0.5rem;
     }
   }
 }
@@ -1042,15 +1054,16 @@
 
 // PROMOTE CARD (owner only)
 .promote-card {
-  border: 1px solid rgba(124, 58, 237, 0.4);
-  background: var(--neon-purple);
+  margin-top: 2rem;
+  border: 1px solid rgba(124, 58, 237, 0.25);
+  background: linear-gradient(145deg, rgba(124, 58, 237, 0.03) 0%, rgba(124, 58, 237, 0.08) 100%);
 
-  .card-header svg { color: #7c3aed; }
-  h2 { color: var(--ink-primary); }
+  .card-header svg { color: var(--neon-purple); }
+  .card-header h2 { color: var(--ink-primary); }
 
   .promote-hint {
-    font-size: 0.9rem;
-    color: var(--ink-muted);
+    font-size: 0.95rem;
+    color: var(--ink-secondary);
     margin: 0 0 1.25rem;
     line-height: 1.5;
   }
@@ -1065,11 +1078,11 @@
     text-decoration: none;
     font-size: 0.9rem;
     transition: all 0.2s;
-    box-shadow: 0 4px 12px rgba(124, 58, 237, 0.3);
+    box-shadow: 0 4px 12px rgba(124, 58, 237, 0.2);
 
     &:hover {
       transform: translateY(-2px);
-      box-shadow: 0 6px 16px rgba(124, 58, 237, 0.4);
+      box-shadow: 0 6px 16px rgba(124, 58, 237, 0.35);
     }
   }
 }

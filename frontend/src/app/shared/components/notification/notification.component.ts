@@ -150,18 +150,19 @@ import { NotificationService, AppNotification } from '../../../core/services/not
 
     @media (max-width: 600px) {
       .notification-container {
-        top: 70px;
-        bottom: unset;
+        top: unset;
+        bottom: 24px;
         right: 5%;
         left: 5%;
         width: 90%;
         align-items: center;
+        gap: 8px;
       }
       .notification-toast {
         min-width: unset;
         max-width: 100%;
         width: 100%;
-        padding: 10px 14px;
+        padding: 8px 12px;
         gap: 8px;
         border-radius: 8px;
       }
@@ -174,6 +175,11 @@ import { NotificationService, AppNotification } from '../../../core/services/not
       }
       .content p {
         font-size: 0.75rem;
+        line-height: 1.2;
+      }
+      .close-btn svg {
+        width: 14px;
+        height: 14px;
       }
     }
   `]

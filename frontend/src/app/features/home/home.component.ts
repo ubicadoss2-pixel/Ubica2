@@ -858,7 +858,7 @@ export class HomeComponent implements OnInit, AfterViewInit {
             this.applyDistanceFilter();
             
             if (this.places().length > 0) {
-               this.notificationService.success('Explorar', 'Lugares localizados a menos de 30km de la búsqueda.');
+               // this.notificationService.success('Explorar', 'Lugares localizados a menos de 30km de la búsqueda.');
                
             }
 
@@ -1024,7 +1024,7 @@ export class HomeComponent implements OnInit, AfterViewInit {
             if (!this.isRoutingActive()) {
               this.applyDistanceFilter();
             }
-            this.notificationService.success('Explorar', 'Ubicación actualizada correctamente.');
+            // this.notificationService.success('Explorar', 'Ubicación actualizada correctamente.');
             
           }
         },
@@ -1088,11 +1088,9 @@ export class HomeComponent implements OnInit, AfterViewInit {
         if (isFavorite) {
           favorites.delete(placeId);
           this.analyticsService.create({ eventType: 'FAVORITE_REMOVE', placeId }).subscribe();
-          this.notificationService.success('Explorar', 'Quitado de favoritos correctamente.');
         } else {
           favorites.add(placeId);
           this.analyticsService.create({ eventType: 'FAVORITE_ADD', placeId }).subscribe();
-          this.notificationService.success('Explorar', 'Guardado en favoritos con éxito.');
         }
 
         this.favoriteIds.set(favorites);
