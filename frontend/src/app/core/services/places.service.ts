@@ -106,6 +106,10 @@ export class PlacesService extends ApiService {
     return this.http.patch<Place>(`${this.baseUrl}/places/${id}/status`, { status });
   }
 
+  delete(id: string) {
+    return this.http.delete(`${this.baseUrl}/places/${id}`);
+  }
+
   private toHttpParams(params: Record<string, string | number | boolean | null | undefined>) {
     return Object.entries(params).reduce(
       (acc, [key, value]) => {
