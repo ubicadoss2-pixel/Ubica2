@@ -1,6 +1,6 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.getActiveOffers = exports.getOffersByPlace = exports.deleteOffer = exports.updateOffer = exports.createOffer = void 0;
+exports.getOffersByOwner = exports.getActiveOffers = exports.getOffersByPlace = exports.deleteOffer = exports.updateOffer = exports.createOffer = void 0;
 const prisma_1 = require("../../config/prisma");
 const createOffer = async (data) => {
     return prisma_1.prisma.offer.create({
@@ -39,11 +39,9 @@ const getOffersByPlace = async (placeId) => {
 exports.getOffersByPlace = getOffersByPlace;
 const getActiveOffers = async (cityId, page = 1, pageSize = 20) => {
     const skip = (page - 1) * pageSize;
-    const now = new Date();
-    let where = {
+    const where = {
         status: "ACTIVE",
-        startDate: { lte: now },
-        endDate: { gte: now },
+        endDate: { gte: new Date() },
     };
     if (cityId) {
         where.place = { cityId };
@@ -51,17 +49,27 @@ const getActiveOffers = async (cityId, page = 1, pageSize = 20) => {
     const [items, total] = await Promise.all([
         prisma_1.prisma.offer.findMany({
             where,
+            include: { place: { select: { id: true, name: true, cityId: true } } },
+            orderBy: { createdAt: "desc" },
             skip,
             take: pageSize,
-            include: {
-                place: {
-                    select: { name: true, slug: true, placeType: { select: { name: true } }, city: { select: { name: true } } },
-                },
-            },
-            orderBy: { createdAt: "desc" },
         }),
         prisma_1.prisma.offer.count({ where }),
     ]);
-    return { items, total, page, pageSize, totalPages: Math.ceil(total / pageSize) };
+    return {
+        items,
+        total,
+        page,
+        pageSize,
+        totalPages: Math.ceil(total / pageSize),
+    };
 };
 exports.getActiveOffers = getActiveOffers;
+const getOffersByOwner = async (ownerUserId) => {
+    return prisma_1.prisma.offer.findMany({
+        where: { place: { ownerUserId } },
+        include: { place: { select: { id: true, name: true } } },
+        orderBy: { createdAt: "desc" },
+    });
+};
+exports.getOffersByOwner = getOffersByOwner;

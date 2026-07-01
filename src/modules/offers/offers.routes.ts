@@ -7,7 +7,8 @@ import {
   listActive,
   listByOwner,
 } from "./offers.controller";
-import { authMiddleware, roleMiddleware } from "../../shared/middlewares/auth.middleware";
+import { authMiddleware } from "../../shared/middlewares/auth.middleware";
+import { authorize } from "../../shared/middlewares/role.middleware";
 
 const router = Router();
 
@@ -16,7 +17,7 @@ router.get("/", listActive);
 router.get("/place/:placeId", listByPlace);
 
 // Owner routes
-router.get("/owner/me", authMiddleware, roleMiddleware(["OWNER", "ADMIN"]), listByOwner);
+router.get("/owner/me", authMiddleware, authorize("OWNER", "ADMIN"), listByOwner);
 
 // Protected routes (owner only - authorized in controller)
 router.post("/", authMiddleware, create);

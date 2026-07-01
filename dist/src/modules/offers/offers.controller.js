@@ -1,9 +1,23 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.listActive = exports.listByPlace = exports.remove = exports.update = exports.create = void 0;
+exports.listActive = exports.listByPlace = exports.remove = exports.update = exports.create = exports.listByOwner = void 0;
 const offers_schema_1 = require("./offers.schema");
 const offers_service_1 = require("./offers.service");
 const prisma_1 = require("../../config/prisma");
+const listByOwner = async (req, res) => {
+    try {
+        const userId = req.user?.id;
+        if (!userId) {
+            return res.status(401).json({ error: "No autorizado" });
+        }
+        const offers = await (0, offers_service_1.getOffersByOwner)(userId);
+        res.json(offers);
+    }
+    catch (error) {
+        res.status(400).json({ error: error.message || "Error fetching offers" });
+    }
+};
+exports.listByOwner = listByOwner;
 const create = async (req, res) => {
     try {
         const validated = offers_schema_1.createOfferSchema.parse(req.body);
