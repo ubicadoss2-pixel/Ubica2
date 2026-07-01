@@ -150,12 +150,14 @@
       font-weight: 800;
       letter-spacing: -0.03em;
       color: var(--ink-on-primary);
+      word-break: break-word;
     }
 
     .email {
       margin: 0.25rem 0 1rem;
       opacity: 0.9;
       font-size: 1rem;
+      word-break: break-word;
     }
 
     .roles-container {
@@ -227,7 +229,7 @@
   align-items: start;
 
   @media (max-width: 960px) {
-    grid-template-columns: 1fr;
+    grid-template-columns: minmax(0, 1fr);
   }
 }
 
@@ -805,6 +807,7 @@
           color: var(--ink-primary);
           font-weight: 600;
           font-size: 1.05rem;
+          word-break: break-word;
         }
 
         .fav-city {
@@ -968,6 +971,10 @@
       margin-top: 0.5rem;
     }
   }
+  
+  .achievements-grid {
+    grid-template-columns: 1fr;
+  }
 }
 
 // ACHIEVEMENTS
@@ -985,7 +992,7 @@
 
 .achievements-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
   gap: 1.5rem;
 }
 
