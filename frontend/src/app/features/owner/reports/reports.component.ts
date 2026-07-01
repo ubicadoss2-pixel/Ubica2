@@ -241,8 +241,9 @@ export class ReportsComponent implements OnInit, AfterViewInit {
   initCharts() {
     if (!this.visitsChartRef?.nativeElement) return;
 
-    const textColor = 'rgba(255, 255, 255, 0.7)';
-    const gridColor = 'rgba(255, 255, 255, 0.07)';
+    // Use a neutral gray that is readable in both light and dark mode
+    const textColor = '#888888';
+    const gridColor = 'rgba(136, 136, 136, 0.15)';
 
     const commonOptions: any = {
       responsive: true,

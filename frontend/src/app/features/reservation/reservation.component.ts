@@ -1,11 +1,13 @@
-import { Component, inject, signal, OnInit } from '@angular/core';
+import { Component, inject, signal, OnInit, ViewChild, ElementRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
-import { ActivatedRoute, Router, RouterLink } from '@angular/router';
+import { ActivatedRoute, RouterLink } from '@angular/router';
 import { PlacesService } from '../../core/services/places.service';
 import { Place } from '../../core/models/api.models';
 import { HttpClient } from '@angular/common/http';
 import { environment } from '../../../environments/environment';
+import jsPDF from 'jspdf';
+import html2canvas from 'html2canvas';
 
 @Component({
   selector: 'app-reservation',
@@ -101,6 +103,22 @@ export class ReservationComponent implements OnInit {
   }
 
   downloadPdf() {
-    window.print();
+    const data = document.getElementById('invoice-content');
+    if (!data) return;
+
+    html2canvas(data, { scale: 2 }).then(canvas => {
+      const imgWidth = 208;
+      const imgHeight = (canvas.height * imgWidth) / canvas.width;
+      
+      const contentDataURL = canvas.toDataURL('image/png');
+      const pdf = new jsPDF('p', 'mm', 'a4');
+      const position = 0;
+      
+      pdf.addImage(contentDataURL, 'PNG', 0, position, imgWidth, imgHeight);
+      
+      const p = this.place();
+      const fileName = p ? `Reserva_${p.name.replace(/\s+/g, '_')}.pdf` : 'Comprobante_Reserva.pdf';
+      pdf.save(fileName);
+    });
   }
 }

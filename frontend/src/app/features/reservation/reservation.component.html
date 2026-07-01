@@ -57,44 +57,49 @@
 
   <!-- Paso 2: Comprobante / Factura -->
   <div class="invoice-container card" *ngIf="step() === 2">
-    <div class="invoice-header">
-      <div class="logo">
-        <img src="assets/logo_final.svg" alt="Ubica2 Logo" class="invoice-logo-img" />
-        <span class="invoice-brand-name">Ubica2</span>
+    <div id="invoice-content" style="background: #ffffff; padding: 2rem; border-radius: 8px;">
+      <div class="invoice-header">
+        <div class="logo">
+          <img src="assets/logo_final.svg" alt="Ubica2 Logo" class="invoice-logo-img" />
+          <span class="invoice-brand-name">Ubica2</span>
+        </div>
+        <div class="invoice-details">
+          <h3>Comprobante de Reserva</h3>
+          <p><strong>N°:</strong> RSV-{{ (100000 + (todayDate.length % 900000)) }}</p>
+          <p><strong>Fecha Emisión:</strong> {{ todayDate | date:'short' }}</p>
+        </div>
       </div>
-      <div class="invoice-details">
-        <h3>Factura / Comprobante de Reserva</h3>
-        <p><strong>N°:</strong> RSV-{{ (100000 + (todayDate.length % 900000)) }}</p>
-        <p><strong>Fecha Emisión:</strong> {{ todayDate | date:'short' }}</p>
+
+      <div class="invoice-body">
+        <div class="billed-to">
+          <h4>Reserva a nombre de:</h4>
+          <p>{{ reservationForm.value.guestName }}</p>
+          <p><strong>Establecimiento:</strong> {{ p.name }}</p>
+          <p><strong>Fecha y Hora:</strong> {{ reservationForm.value.date }} a las {{ reservationForm.value.time }}</p>
+          <p><strong>Personas:</strong> {{ reservationForm.value.people }}</p>
+          <p *ngIf="reservationForm.value.reason"><strong>Motivo:</strong> {{ reservationForm.value.reason }}</p>
+          <p *ngIf="reservationForm.value.observations"><strong>Observaciones:</strong> {{ reservationForm.value.observations }}</p>
+        </div>
+
+        <div style="background: #f0fdf4; padding: 1rem; border-radius: 8px; margin-bottom: 1.5rem; border: 1px solid #bbf7d0; text-align: center; margin-top: 2rem;">
+          <p style="margin: 0; color: #166534; font-weight: bold; font-size: 1.1rem; display: flex; align-items: center; justify-content: center;">
+            <svg class="lucide lucide-check-circle-2" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#22c55e" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="margin-right: 0.35rem;"><path d="M12 22C6.477 22 2 17.523 2 12S6.477 2 12 2s10 4.477 10 10-4.477 10-10 10z"/><path d="m9 12 2 2 4-4"/></svg> 
+            ¡Reserva Confirmada Exitosamente!
+          </p>
+          <p style="margin: 0.5rem 0 0 0; color: #166534; font-size: 0.9rem;">
+            Presenta este comprobante en el establecimiento al llegar.
+          </p>
+        </div>
       </div>
     </div>
 
-    <div class="invoice-body">
-      <div class="billed-to">
-        <h4>Reserva a nombre de:</h4>
-        <p>{{ reservationForm.value.guestName }}</p>
-        <p><strong>Establecimiento:</strong> {{ p.name }}</p>
-        <p><strong>Fecha y Hora:</strong> {{ reservationForm.value.date }} a las {{ reservationForm.value.time }}</p>
-        <p><strong>Personas:</strong> {{ reservationForm.value.people }}</p>
-        <p *ngIf="reservationForm.value.reason"><strong>Motivo:</strong> {{ reservationForm.value.reason }}</p>
-        <p *ngIf="reservationForm.value.observations"><strong>Observaciones:</strong> {{ reservationForm.value.observations }}</p>
-      </div>
-
-      <div style="background: #f0fdf4; padding: 1rem; border-radius: 8px; margin-bottom: 1.5rem; border: 1px solid #bbf7d0; text-align: center; margin-top: 2rem;">
-        <p style="margin: 0; color: #166534; font-weight: bold; font-size: 1.1rem;">
-          <svg class="lucide lucide-check-circle-2" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#22c55e" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align: middle; margin-right: 0.35rem;"><path d="M12 22C6.477 22 2 17.523 2 12S6.477 2 12 2s10 4.477 10 10-4.477 10-10 10z"/><path d="m9 12 2 2 4-4"/></svg> 
-          ¡Reserva Confirmada Exitosamente!
-        </p>
-        <p style="margin: 0.5rem 0 0 0; color: #166534; font-size: 0.9rem;">
-          Se ha enviado un comprobante a tu correo electrónico.
-        </p>
-      </div>
-    </div>
-
-    <div class="invoice-footer no-print">
-      <div style="display: flex; flex-direction: column; align-items: center; gap: 1rem; margin-top: 2rem;">
-        <button class="btn-primary" (click)="downloadPdf()" style="max-width: 300px;">Descargar Comprobante PDF</button>
-        <a routerLink="/" style="display: inline-flex; align-items: center; justify-content: center; padding: 0.75rem 1.5rem; border: 2px solid var(--border-quiet, #d1d5db); border-radius: 8px; color: var(--text-secondary, #4b5563); font-weight: 600; text-decoration: none; transition: all 0.2s; background: transparent;">
+    <div class="invoice-footer no-print" style="padding: 0 2rem 2rem 2rem;">
+      <div style="display: flex; flex-direction: column; align-items: center; gap: 1rem; margin-top: 1rem;">
+        <button class="btn-primary" (click)="downloadPdf()" style="width: 100%; max-width: 300px; display: inline-flex; align-items: center; justify-content: center; gap: 0.5rem;">
+          <svg class="lucide lucide-download" xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" x2="12" y1="15" y2="3"/></svg>
+          Descargar Comprobante PDF
+        </button>
+        <a routerLink="/" style="display: inline-flex; align-items: center; justify-content: center; padding: 0.75rem 1.5rem; border: 2px solid var(--border-quiet, #d1d5db); border-radius: 8px; color: var(--text-secondary, #4b5563); font-weight: 600; text-decoration: none; transition: all 0.2s; background: transparent; width: 100%; max-width: 300px;">
           <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="margin-right: 0.5rem;"><path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
           Ir al Inicio
         </a>

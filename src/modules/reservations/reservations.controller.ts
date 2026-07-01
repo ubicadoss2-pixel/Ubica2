@@ -68,12 +68,12 @@ export const confirmReservation = async (req: Request, res: Response) => {
       </div>
     `;
 
-    // Intentar enviar correo
-    const emailSent = await sendEmail({
+    // Intentar enviar correo (en segundo plano)
+    sendEmail({
       to: email || user?.email,
       subject: `Confirmación de Reserva en ${placeName} - Ubica2`,
       html
-    });
+    }).catch(err => console.error("Error enviando email cliente:", err));
 
     if (ownerEmail) {
       const ownerHtml = `
@@ -120,21 +120,16 @@ export const confirmReservation = async (req: Request, res: Response) => {
           </div>
         </div>
       `;
-      await sendEmail({
+      sendEmail({
         to: ownerEmail,
         subject: `Nueva reserva en ${placeName} - Ubica2`,
         html: ownerHtml
-      });
+      }).catch(err => console.error("Error enviando email owner:", err));
     }
 
-    if (emailSent) {
-      res.status(200).json({ 
-        message: "Reserva confirmada y guardada exitosamente.",
-        previewUrl: typeof emailSent === 'string' ? emailSent : undefined
-      });
-    } else {
-      res.status(200).json({ message: "Reserva confirmada, pero hubo un problema al enviar el correo." });
-    }
+    res.status(200).json({ 
+      message: "Reserva confirmada y guardada exitosamente."
+    });
 
   } catch (error: any) {
     console.error("Error al confirmar reserva:", error);

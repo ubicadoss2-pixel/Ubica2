@@ -64,6 +64,7 @@
       font-size: 1rem;
       background: var(--surface-main, #f9fafb);
       color: var(--ink-primary, #111827);
+      color-scheme: dark light;
       transition: border-color 0.2s;
 
       &:focus {
